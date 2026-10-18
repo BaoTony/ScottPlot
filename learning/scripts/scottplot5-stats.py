@@ -6,7 +6,7 @@
       清单、渲染管线步骤、交互响应器、Add 方法数、枚举成员数等关键事实，
       供 learning/ 下各编号文档核对数字口径使用。
 
-运行：python learning/scripts/_stats.py
+运行：python learning/scripts/scottplot5-stats.py
 """
 import os
 import re
