@@ -1,6 +1,6 @@
-# ScottPlot 5 交互系统与跨平台控件架构
+# ScottPlot 5 交互系统架构剖析
 
-> Interactivity: 25 个文件 · Controls: 8个包 56 个文件 · ~7,000 行
+> 25 个文件 · UserInputProcessor + 12 个 IUserActionResponse · ~3,500 行
 
 ---
 
@@ -148,117 +148,56 @@ KeyboardAutoscale(A)
 
 ---
 
-## 五、跨平台控件架构
-
-### 5.1 统一接口：IPlotControl
+## 五、ResponseInfo 状态机
 
 ```csharp
-public interface IPlotControl
+public struct ResponseInfo
 {
-    Plot Plot { get; }                  // 核心 Plot 对象
-    IMultiplot Multiplot { get; set; }  // 多图支持
-    void Refresh();                     // 触发布局+渲染
-    UserInputProcessor UserInputProcessor { get; }
-    IPlotMenu? Menu { get; set; }       // 右键菜单
-    GRContext? GRContext { get; }       // OpenGL 上下文
-    float DisplayScale { get; set; }    // 高分屏缩放
+    public bool IsPrimary;       // 只有当前响应器生效（独占模式）
+    public bool RefreshNeeded;   // 是否需要重新渲染
 }
 ```
 
-### 5.2 8 平台实现
-
-| 平台 | 控件类 | NuGet 包 | 渲染方式 | 特殊处理 |
-|---|---|---|---|---|
-| **WinForms** | `FormsPlot` | `ScottPlot.WinForms` | SKControl (SkiaSharp.Views) | 设计时替代视图 |
-| **WPF** | `WpfPlot` | `ScottPlot.WPF` | SKElement (SkiaSharp.Views) | 自定义 Measure/Arrange |
-| **Avalonia** | `AvaPlot` | `ScottPlot.Avalonia` | ICustomDrawOperation | ClipToBounds + Focusable |
-| **Blazor** | `BlazorPlot` | `ScottPlot.Blazor` | SKCanvas (JS interop) | 静态文件 + JS互操作 |
-| **MAUI** | `MauiPlot` | `ScottPlot.Maui` | SKCanvasView | Handler 模式 |
-| **WinUI** | `WinUIPlot` | `ScottPlot.WinUI` | SKXamlCanvas | WinUI 3 原生 |
-| **Eto** | `EtoPlot` | `ScottPlot.Eto` | SKControl | 跨平台 GUI 框架 |
-| **OpenGL** | `FormsPlotGL` | `ScottPlot.OpenGL` | GLControl | GPU 硬件加速 |
-
-### 5.3 控件通用模式（以 WinForms 为例）
-
-```csharp
-// ① 构造函数：创建 Plot + UserInputProcessor + Menu
-public FormsPlotBase()
-{
-    Plot = new() { PlotControl = this };   // Plot 反向引用控件
-    Multiplot = new Multiplot(Plot);
-    DisplayScale = DetectDisplayScale();
-    UserInputProcessor = new(this);        // 绑定到自身
-    Menu = new FormsPlotMenu(this);
-}
-
-// ② 事件处理：转发到 UserInputProcessor
-void SKElement_MouseDown(sender, MouseEventArgs e)
-{
-    UserInputProcessor.ProcessMouseDown(e);   // → 交互系统
-    base.OnMouseDown(e);                      // → WinForms 基类
-}
-
-// ③ 渲染：平台 OnPaint → Refresh → RenderManager
-protected override void OnPaint(PaintEventArgs e)
-{
-    // SkiaSharp SKControl 自动调用 OnPaintSurface
-    // → Multiplot.Render(skCanvas, pixelRect)
-    // → RenderManager.Render(canvas, rect)
-}
-
-// ④ 重置：支持更换 Plot 实例
-void Reset(Plot newPlot)
-{
-    Plot = newPlot;
-    UserInputProcessor.Reset();           // 重置交互状态
-    Multiplot.Reset(newPlot);
-    Refresh();
-}
+**IsPrimary 生命周期**：
+```
+非 Primary 状态
+    │
+    │ 鼠标按下：匹配到 MouseDragPan
+    ▼
+IsPrimary = true    ← 独占！所有后续事件只发给此响应器
+    │
+    │ 持续收到 MouseMove 事件
+    │ → 直接处理，不重新匹配
+    ▼
+鼠标弹起：ResetState()
+IsPrimary = false   ← 释放独占权
+    │
+    ▼
+非 Primary 状态（下一次事件重新匹配）
 ```
 
 ---
 
-## 六、多平台渲染差异
-
-```
-WinForms / WPF:
-  控件 → OnPaint → SKControl.Render → SkiaSharp SKCanvas
-    → Multiplot.Render() → 遍历 Subplot → RenderManager.Render()
-
-Avalonia:
-  Control.Render(DrawingContext) → CustomDrawOp → ISkiaSharpApiLeaseFeature
-    → lease.SkCanvas → Multiplot.Render()
-
-Blazor (Web):
-  JS Interop → HTML Canvas → SKCanvas WebGL
-    → BlazorPlotBase.Render() → Multiplot.Render()
-
-MAUI / WinUI:
-  原生 Handler → SKCanvasView → OnPaintSurface
-    → Multiplot.Render()
-
-Eto:
-  SKControl.OnPaint → EtoPlot.Refresh()
-```
-
-**关键差异**：所有平台最终都汇合到 `Multiplot.Render(SKCanvas, PixelRect)` 这一个方法，之后完全走相同的 `RenderManager` 管道。这就是 `IPlotControl` 抽象的价值。
-
----
-
-## 七、高分屏（HiDPI）支持
+## 六、KeyboardState — 按键跟踪
 
 ```csharp
-// 控件构造函数中自动检测
-float DisplayScale = DetectDisplayScale();
-// → 从 DeviceDpi 或系统 API 获取缩放系数
-// → Plot.ScaleFactorF = DisplayScale
-// → RenderManager.Render() 中: canvas.Scale(Plot.ScaleFactorF)
-// → 所有文字/线条自动缩放，视觉效果在所有 DPI 下一致
+class KeyboardState
+{
+    void Press(Key key);             // 标记按下
+    void Release(Key key);           // 标记释放
+    void Reset();                    // 清空所有状态
+    bool IsPressed(Key key);         // 某键是否按下
+    bool IsShift { get; }            // Shift 键
+    bool IsCtrl { get; }             // Ctrl 键
+    bool IsAlt { get; }              // Alt 键
+}
 ```
+
+**用途**：`MouseWheelZoom` 根据 `IsCtrl` 决定是缩放 X 轴还是 Y 轴或 XY 同时缩放。
 
 ---
 
-## 八、自定义交互响应器
+## 七、自定义交互响应器
 
 ```csharp
 class MyCustomResponse : IUserActionResponse
@@ -282,16 +221,16 @@ plotControl.UserInputProcessor.UserActionResponses.Insert(0, new MyCustomRespons
 
 ---
 
-## 九、关键设计洞察
+## 八、关键设计洞察
 
-1. **命令模式 (IUserAction)**：平台事件被封装为平台无关的 `IUserAction` 对象，`UserInputProcessor` 不依赖任何具体平台类型。
+1. **命令模式 (IUserAction)**：平台事件被封装为平台无关的 `IUserAction` 对象，`UserInputProcessor` 不依赖任何具体平台类型（WinForms/PointerPressed/MouseEventArgs 全被屏蔽）。
 
-2. **责任链模式 (IUserActionResponse[])**：响应器按列表顺序依次尝试匹配，第一个 `IsPrimary` 的响应器获得独占权，直到下一个事件才释放。这确保了拖拽期间不会被其他响应器干扰。
+2. **责任链模式 (IUserActionResponse[])**：响应器按列表顺序依次尝试匹配，先到先得。`MouseInteractWithPlottables` 排在 `MouseDragPan` 之前，确保拖拽交互标记优先于全图平移。
 
-3. **事件桥接的薄层设计**：每个控件只有 ~80 行核心代码，做的就是"捕获原生事件 → 传给 UserInputProcessor → Refresh()"，所有复杂度都在共享的交互系统中。
+3. **Primary Response 独占机制**：类似模态对话框——当 `MouseDragPan` 正在拖拽时，`IsPrimary=true` 阻止其他响应器处理中间事件，只有拖拽结束时才释放。这避免了"拖拽平移时误触发滚轮缩放"。
 
-4. **DisplayScale 自动检测**：不同平台有不同的 DPI 检测机制（WinForms: DeviceDpi, WPF: VisualTreeHelper, Avalonia: RenderScaling），但最终统一为 `Plot.ScaleFactorF`。
+4. **默认顺序的精心编排**：`MouseDragZoomRectangle(Middle)` 第二、`MouseDragPan(Left)` 第三——中键比左键优先，`SingleClickAutoscale(Middle)` 在点击类第一位——都比拖拽类靠后，确保拖拽优先于单击。
 
-5. **Reset 模式**：允许运行时更换整个 Plot 实例（用户可完全重建图表而无需销毁控件），同时 `UserInputProcessor.Reset()` 清理所有拖拽中状态，防止状态泄漏。
+5. **键盘修饰键的灵活组合**：`MouseWheelZoom(Shift, Ctrl)` 表示默认滚轮行为被 Shift+滚轮和 Ctrl+滚轮覆盖，从而支持分别缩放 X/Y 轴。
 
-6. **Primary Response 机制**：类似模态对话框——当 `MouseDragPan` 正在拖拽时，`IsPrimary=true` 阻止其他响应器处理中间事件，只有拖拽结束时才释放。这避免了"拖拽平移时误触发滚轮缩放"。
+6. **状态重置的安全性**：`UserInputProcessor.Reset()` 遍历所有响应器调用 `ResetState()`，清理所有活跃的拖拽/按键状态，防止失焦后残留状态导致下次交互行为异常。

@@ -4,7 +4,7 @@
 
 ## 总览
 
-ScottPlot 5 的数据流可归纳为 **4 条核心链路**，覆盖从"用户写入数据"到"屏幕绘制像素"的完整过程，外加两条辅助链路（GUI 交互、静态导出）。
+ScottPlot 5 的数据流可归纳为 **5 条核心链路**，覆盖从"用户写入数据"到"屏幕绘制像素"再到"文件导出"的完整过程。
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -18,7 +18,7 @@ ScottPlot 5 的数据流可归纳为 **4 条核心链路**，覆盖从"用户写
 │  [Plot.Add.XXX()] → [PlottableAdder] → [new Plottable(data)] → [Plot.PlottableList.Add()] │
 │                                                                         │
 │  链路③: 渲染管道 (Render Pipeline)                                        │
-│  [RenderManager.Render()] → 24 步 RenderAction 管道 → [SkiaSharp Canvas] │
+│  [RenderManager.Render()] → 25 步 RenderAction 管道 → [SkiaSharp Canvas] │
 │                                                                         │
 │  链路④: GUI 交互链路 (WinForms/WPF/Avalonia/Blazor/...)                   │
 │  [鼠标/键盘事件] → [UserInputProcessor] → [IUserActionResponse[]] → [Plot.Modify → Refresh] │
@@ -131,7 +131,7 @@ Plot myPlot = new();         →  创建 Plot 对象
   ├─ PlotPlottableManager
   │   PlottableList          →  List<IPlottable>
   ├─ IAxisManager Axes       →  AxisManager (5 轴)
-  ├─ RenderManager           →  RenderManager (24 步)
+  ├─ RenderManager           →  RenderManager (25 步)
   └─ Legend                  →  Legend
 
 myPlot.Add.Scatter(xs, ys);  →  PlottableAdder.Scatter()
@@ -216,50 +216,63 @@ IPlottable (基接口)
 ⑤ 静态导出: plot.SavePng()        ← 内部 Build→Render→Encode
 ```
 
-### 3.2 24 步渲染序列 (RenderManager.RenderActions)
+### 3.2 25 步渲染序列 (RenderManager.RenderActions)
 
 ```
-步骤 | RenderAction                         | 职责
-────┼─────────────────────────────────────┼────────────────────────────
- 1  │ PreRenderLock                       │ 加锁，防并发渲染
- 2  │ RenderStartingEvent                 │ 触发 RenderStarting 事件
- 3  │ ReplaceNullAxesWithDefaults         │ 未设置轴的 Plottable 绑定默认轴
- 4  │ AutoScaleUnsetAxes                  │ 未手动设范围的轴自动计算
- 5  │ StoreGLState                        │ 备份 OpenGL 状态
- 6  │ ClearCanvas                         │ 清空画布
- 7  │ ApplyAxisRulesBeforeLayout          │ 应用轴规则(布局前)
- 8  │ CalculateLayout                     │ 计算 Figure/Data/Legend 布局矩形
- 9  │ RenderFigureBackground              │ 绘制图表背景
-10  │ RegenerateTicks                     │ 根据布局后数据区重新生成刻度
-11  │ ApplyAxisRulesAfterLayout           │ 应用轴规则(布局后)
-12  │ RenderDataBackground                │ 绘制数据区背景
-13  │ RenderGridsBelowPlottables          │ 绘制下层网格线
-14  │ RenderPlottables                    │ ★ 核心：遍历绘制所有 IPlottable
-15  │ RenderGridsAbovePlottables          │ 绘制上层网格线
-16  │ RenderPlottablesLast                │ 绘制后置 Plottable (如缩放矩形)
-17  │ RenderZoomRectangle                 │ 绘制缩放矩形
-18  │ RenderLegends                       │ 绘制图例
-19  │ RenderBorders                       │ 绘制图表边框
-20  │ RenderPanels                        │ 绘制面板
-21  │ RenderBenchmark                      │ 绘制性能基准信息
-22  │ RenderStartingEvent                 │ (同上)
-23  │ ExecutePlottableAxisManagers         │ 多轴管理器执行
-24  │ SyncGLPlottables / RestoreGLState   │ 恢复 OpenGL 状态
-────│─────────────────────────────────────│────────────────────────────
-    │ ContinuouslyAutoscale              │ 连续自动缩放 (条件性执行)
+步骤 | RenderAction                        | 核心职责
+────┼────────────────────────────────────┼──────────────────────────────────
+ 1  │ PreRenderLock                       │ 触发 PreRenderLock 事件(用户可加锁/同步)
+ 2  │ ClearCanvas                         │ 清空画布 (含半透明背景补偿)
+ 3  │ ReplaceNullAxesWithDefaults         │ 未绑定轴的 Plottable → 默认轴
+ 4  │ AutoScaleUnsetAxes                  │ ★ 未手动设置范围的轴 → 自动计算
+ 5  │ ContinuouslyAutoscale               │ 连续自动缩放 (条件性, 仅当 ContinuousAutoscale=true)
+ 6  │ ExecutePlottableAxisManagers        │ DataLogger 等 IManagesAxisLimits Plottable 管理轴
+ 7  │ ApplyAxisRulesBeforeLayout          │ 布局前应用轴规则 (如最小范围约束)
+ 8  │ CalculateLayout                     │ ★ 测量所有面板 → 计算 Figure/Data 布局矩形
+ 9  │ RenderFigureBackground              │ 绘制图表背景 (Figure 区域)
+10  │ ApplyAxisRulesAfterLayout           │ 布局后应用轴规则 (如锁定纵横比)
+11  │ RegenerateTicks                     │ ★ 根据布局后 DataRect 尺寸重新生成所有轴的刻度
+12  │ RenderStartingEvent                 │ 触发 RenderStarting 事件
+13  │ RenderDataBackground                │ 绘制数据区背景 (Data 区域)
+14  │ StoreGLState                        │ 备份 OpenGL 状态 (GL混用 Bug 修复)
+15  │ RenderGridsBelowPlottables          │ 绘制下层网格线 (在数据之下)
+16  │ RestoreGLState                      │ 恢复 OpenGL 状态
+17  │ RenderPlottables                    │ ★★★ 核心：裁剪+遍历绘制所有可见 IPlottable
+18  │ RenderGridsAbovePlottables          │ 绘制上层网格线 (在数据之上)
+19  │ RenderLegends                       │ 绘制图例
+20  │ RenderPanels                        │ 绘制面板 (轴标签、标题、刻度等)
+21  │ RenderBorders                       │ 绘制图表边框
+22  │ RenderZoomRectangle                 │ 绘制中键拖拽缩放矩形
+23  │ SyncGLPlottables                    │ 同步 GPU Plottable 渲染
+24  │ RenderPlottablesLast                │ ★ 绘制 IRenderLast Plottable (覆盖在轴上方)
+25  │ RenderBenchmark                     │ 绘制右上角性能基准信息
+```
+
+**关键：每次 RenderOnce() 中 CanvasState 自动 Save/RestoreAll 隔离各步骤**
+
+```csharp
+foreach (IRenderAction action in RenderActions)
+{
+    rp.CanvasState.Save();      // 保存画布状态
+    action.Render(rp);          // 执行该步骤
+    rp.CanvasState.RestoreAll(); // 恢复到初始状态
+    record(action.GetType().Name, elapsed);
+}
 ```
 
 ### 3.3 RenderPack — 渲染上下文数据包
 
 ```
-RenderPack (每次 Render 创建, using 释放)
-├── Plot plot              ← 回到 Plot 引用, 可访问所有 Plottable
-├── SKCanvas canvas        ← SkiaSharp 绘图画布
+RenderPack (每次 RenderOnce() 创建, using 释放)
+├── Plot Plot              ← 回到 Plot 引用, 可访问所有 Plottable
+├── SKCanvas Canvas        ← SkiaSharp 绘图画布
+├── CanvasState CanvasState ← 画布状态机 (Save/Restore/Clip/Translate)
+├── Paint Paint            ← 可复用的 SKPaint (Dispose 时释放)
 ├── PixelRect FigureRect   ← 图表总区域 (Figure)
-├── PixelRect DataRect     ← 数据区域 (Data = Figure - Axes - Legend)
-├── PixelRect LayoutRect   ← 布局区域
-├── CanvasState            ← 画布状态机 (Save/Restore/Clip/Translate)
-└── RenderDetails          ← 渲染元数据
+├── PixelRect ScaledFigureRect ← 缩放后的图表区域
+├── PixelRect DataRect     ← 数据区域 (CalculateLayout 后填充)
+├── Layout Layout          ← 布局结果 (各面板尺寸)
+└── TimeSpan Elapsed       ← 自 RenderPack 创建以来的耗时
 ```
 
 ### 3.4 Plottable.Render() 内部坐标转换
@@ -271,13 +284,12 @@ IPlottable.Render(RenderPack rp)
   │     Data.GetScatterPoints() → Coordinates[]
   │
   ├── ② 坐标转换 (Coordinates → Pixel)
-  │     rp.Axes.GetPixelX(coord.X)
-  │     rp.Axes.GetPixelY(coord.Y)
-  │     └─ IAxis 内部维护: (CoordRange → PixelRange) 线性映射
+  │     plottable.Axes.GetPixel(coord)     ← Axes 持有 DataRect
+  │     └─ IXAxis/IYAxis 内部维护: (CoordRange → PixelRange) 线性映射
   │
   ├── ③ 裁剪
-  │     只绘制 PixelRect 范围内的对象 (性能优化)
-  │     利用 rp.DataRect 判断哪些在可见区域
+  │     只绘制 rp.DataRect 范围内的对象 (性能优化)
+  │     利用 rp.DataRect.Contains(pixel) 判断可见性
   │
   └── ④ 绘制到 Canvas
         rp.Canvas.DrawLine/Paint/Path/Circle/Text...
@@ -314,8 +326,8 @@ IPlottable.Render(RenderPack rp)
       │ ① 计算 Δx, Δy (像素位移)
       │ ② 转换为坐标位移: Δcoord = Δpixel * (coordRange / pixelRange)
       │ ③ Plot.Axes.SetLimits(newLimits) ← 修改轴范围
-      │ ④ PlotControl.Refresh()           ← 触发重新渲染
-      │     └→ RenderManager.Render() → 24步管道 → 新图像
+      │ ③ PlotControl.Refresh()           ← 触发重新渲染
+      │     └→ RenderManager.Render() → 25步管道 → 新图像
       │
       ▼
 鼠标弹起
@@ -390,8 +402,8 @@ SavePng()  SaveJpeg()  SaveBmp()  SaveWebp()  SaveSvg()  GetImageBytes()
 | `IPlottable` | ScottPlot | 所有图表类型的基接口 |
 | `IScatterSource` | ScottPlot | XY 离散数据源 |
 | `ISignalSource` | ScottPlot | 等间距大数据源 |
-| `RenderManager` | ScottPlot.Rendering | 24 步渲染管道调度 |
-| `RenderPack` | ScottPlot.Rendering | 单次渲染的上下文数据包 |
+| `RenderManager` | ScottPlot.Rendering | 25 步渲染管道调度 |
+| `RenderPack` | ScottPlot | 单次渲染的上下文数据包 |
 | `IRenderAction` | ScottPlot.Rendering | 渲染步骤接口 |
 | `UserInputProcessor` | ScottPlot.Interactivity | 统一输入事件处理 |
 | `IPlotControl` | ScottPlot | 跨平台控件抽象 |

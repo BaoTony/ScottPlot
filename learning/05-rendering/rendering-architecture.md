@@ -1,6 +1,6 @@
 # ScottPlot 5 渲染管道深度剖析
 
-> 26 个 RenderAction + RenderManager + RenderPack · ~1,200 行核心调度代码
+> 25 个 RenderAction + RenderManager + RenderPack · ~1,200 行核心调度代码
 
 ---
 
@@ -48,7 +48,7 @@ public interface IRenderAction
 }
 ```
 
-**极其简洁**：一个方法，一个参数 `RenderPack`。所有复杂性被封装在 26 个具体实现中。
+**极其简洁**：一个方法，一个参数 `RenderPack`。所有复杂性被封装在 25 个具体实现中。
 
 ---
 
@@ -73,7 +73,7 @@ public class RenderPack(Plot plot, PixelRect figureRect, SKCanvas canvas) : IDis
 
 ---
 
-## 四、24 步渲染序列详解
+## 四、25 步渲染序列详解
 
 ```
 序号  RenderAction                     核心职责                    输入         输出

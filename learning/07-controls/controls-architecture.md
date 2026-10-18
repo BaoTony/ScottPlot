@@ -1,6 +1,6 @@
 # ScottPlot 5 跨平台控件与多图系统
 
-> 9 个 NuGet 包 · 8 套平台控件 · IPlotControl + IPlotMenu + IMultiplot · ~3,500 行核心
+> 8 个 NuGet 包 · 8 套平台控件 · IPlotControl + IPlotMenu + IMultiplot · ~3,500 行核心
 
 ---
 
@@ -335,7 +335,7 @@ mp.SharedAxes.ShareX([plot1, plot2]);  // 两图共享X轴
   → 平台 InvalidateVisual() / Invalidate()
   → 平台 OnPaint / OnPaintSurface
   → Multiplot.Render(canvas, rect)
-  → RenderManager.Render(canvas, rect)         ← 24 步渲染管道
+  → RenderManager.Render(canvas, rect)         ← 25 步渲染管道
 
 Reset(newPlot)  ← 热替换 Plot 对象
   → 旧 Plot.Dispose()
