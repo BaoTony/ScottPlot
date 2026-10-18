@@ -330,6 +330,10 @@ plot.ScaleFactorF = DisplayScale;
 - 修改数据后**必须**调用 `control.Refresh()`（或 `Plot.Render()` / `SavePng()`）才会重绘
 - 平台控件的 `Invalidate()` 只是触发重绘事件，最终仍走 `Refresh()`
 
+---
+
+## 七、控件层与跨平台
+
 ### 25. `SignalConst` 已过时
 
 ```csharp

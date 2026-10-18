@@ -112,7 +112,7 @@ public class RenderPack(Plot plot, PixelRect figureRect, SKCanvas canvas) : IDis
 
 ## 四、关键 RenderAction 深入
 
-### 5.1 AutoScaleUnsetAxes（步骤4）
+### 4.1 AutoScaleUnsetAxes（步骤4）
 
 ```csharp
 public void Render(RenderPack rp)
@@ -144,7 +144,7 @@ public void Render(RenderPack rp)
 
 **决策逻辑**：只有用户未手动设置范围的轴才自动缩放。一旦调用 `plot.Axes.SetLimitsX(0, 100)`，`HasBeenSet = true`，后续 AutoScale 不再覆盖。
 
-### 5.2 CalculateLayout（步骤8）
+### 4.2 CalculateLayout（步骤8）
 
 ```
 FigureRect (画布总区域)
@@ -178,7 +178,7 @@ public readonly struct Layout
 }
 ```
 
-### 5.3 RegenerateTicks（步骤11）
+### 4.3 RegenerateTicks（步骤11）
 
 ```csharp
 public void Render(RenderPack rp)
@@ -197,7 +197,7 @@ public void Render(RenderPack rp)
 
 **关键**：刻度数量由 `DataRect.Width/Height` 决定 —— 屏幕宽度 300px 和 1200px 生成的刻度数是不同的。
 
-### 5.4 RenderPlottables（步骤17）— 核心渲染
+### 4.4 RenderPlottables（步骤17）— 核心渲染
 
 ```csharp
 public void Render(RenderPack rp)
@@ -225,7 +225,7 @@ public void Render(RenderPack rp)
 
 **CanvasState.Save/RestoreAll 保证了每个 Plottable 的绘制状态完全隔离**——A 的变换不会影响 B。
 
-### 5.5 ContinuouslyAutoscale（步骤5）
+### 4.5 ContinuouslyAutoscale（步骤5）
 
 ```
 条件: 仅当 plot.Axes.ContinuouslyAutoscale 为 true 时启用

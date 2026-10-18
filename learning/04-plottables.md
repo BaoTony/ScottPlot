@@ -249,7 +249,7 @@ IHasInteractiveHandles → 交互句柄
 
 样式 Mixin 接口（IHasLine / IHasMarker / IHasFill / IHasLegendText / IHasArrow /
 IHasLabel / IHasOutline / IHasShadow / IHasBackground / IHasColorAxis）的完整属性
-清单与转发模式：见 [02-primitives §十](./02-primitives.md)。
+清单与转发模式：见 [02-primitives §三](./02-primitives.md#三样式系统)。
 
 ---
 
