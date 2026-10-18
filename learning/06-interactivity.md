@@ -1,6 +1,6 @@
 # ScottPlot 5 交互系统架构剖析
 
-> UserInputProcessor + 13 个响应器（默认注册 10 个）· IPlotControl 无关平台
+> 职责：交互系统深度剖析 — UserInputProcessor 责任链 · 13 个响应器 · IsPrimary 独占机制
 
 ---
 

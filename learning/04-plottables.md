@@ -1,6 +1,6 @@
 # ScottPlot 5 Plottables 层架构剖析
 
-> 统一 IPlottable 契约 · IHas* Mixin 样式接口 · 按数据源/几何形态分类
+> 职责：Plottable 层深度剖析 — 统一 IPlottable 契约 · IHas* Mixin 接口 · 全分类矩阵
 
 ---
 

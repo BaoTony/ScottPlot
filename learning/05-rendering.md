@@ -1,6 +1,6 @@
 # ScottPlot 5 渲染管道深度剖析
 
-> 25 步 RenderAction 管道 · RenderManager 仅 ~180 行 · 每步一个独立类
+> 职责：渲染管道深度剖析 — 25 步 RenderAction 序列 · RenderPack 上下文 · 关键步骤源码
 
 ---
 

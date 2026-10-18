@@ -1,6 +1,6 @@
 # ScottPlot 5 新手入门
 
-> 跨平台 .NET 图表库 · WinForms / WPF / Avalonia / Blazor / MAUI / WinUI · 2026-08-18
+> 职责：新手唯一入口 — 架构速览 + 5 分钟上手 + 搭建环境<br/>跨平台 .NET 图表库 · WinForms / WPF / Avalonia / Blazor / MAUI / WinUI · 2026-10-18
 
 ---
 

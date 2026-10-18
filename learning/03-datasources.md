@@ -1,6 +1,6 @@
 # ScottPlot 5 数据源系统深度剖析
 
-> 约占核心库 1/13 · Scatter / Signal / OHLC / 实时流 四大体系
+> 职责：数据源层深度剖析 — Scatter/Signal/OHLC/实时流 + SegmentedTree 降采样引擎<br/>约占核心库 1/13
 
 ---
 

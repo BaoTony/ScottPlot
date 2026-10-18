@@ -1,6 +1,6 @@
 # ScottPlot 5 跨平台控件与多图系统
 
-> 7 套平台控件 + 1 GPU 扩展 · IPlotControl + IPlotMenu + IMultiplot
+> 职责：跨平台控件深度剖析 — 7 套平台控件对比 · IPlotControl 统一接口 · Multiplot 多图系统
 
 ---
 

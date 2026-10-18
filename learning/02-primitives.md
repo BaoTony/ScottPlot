@@ -1,6 +1,6 @@
 # ScottPlot 5 Primitives 层架构剖析
 
-> 约占核心库 1/6 · 以 class 和 struct 为主体 · 辅以少量 enum 与 interface
+> 职责：原子层深度剖析 — 坐标/颜色/样式/几何/轴等基础类型<br/>约占核心库 1/6 · 以 class 和 struct 为主体
 
 ---
 
