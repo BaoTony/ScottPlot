@@ -20,7 +20,7 @@ learning/
 ├── 07-rendering.md            │ 渲染 → 交互 → 控件）
 ├── 08-interactivity.md        │
 ├── 09-controls.md             ┘
-├── 10-usage-caveats.md        ← 全程伴随：15 条陷阱
+├── 10-usage-caveats.md        ← 全程伴随：29 条陷阱
 ├── demos/                     ← 动手实验代码（占位）
 ├── archive/                   ← 历史材料
 └── scripts/                   ← 统计脚本等辅助工具
@@ -50,7 +50,7 @@ learning/
 | 25 步渲染序列、RenderPack 结构 | `07-rendering.md` | — |
 | 交互责任链、默认响应器优先级 | `08-interactivity.md` | — |
 | IPlotControl、8 平台对比、Multiplot | `09-controls.md` | — |
-| 陷阱（15 条，含源码证据） | `10-usage-caveats.md` | 00 号文档仅留速览表 |
+| 陷阱（29 条，含源码证据） | `10-usage-caveats.md` | 00 号文档仅留速览表 |
 
 ## 维护规则
 

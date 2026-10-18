@@ -119,14 +119,14 @@ ScottPlot5/
 ├── Primitives/             109  ← Layer 2: 原子数据结构
 ├── Interfaces/             51  ← Layer 2: 核心接口
 ├── DataSources/             28  ← Layer 3: 数据源实现
-├── Plottables/              61  ← Layer 4: 可绘制物
-│   └── Interactive/         11  ← 可拖拽交互元素
-├── Rendering/                1  ← Layer 5: 渲染入口
+├── Plottables/              72  ← Layer 4: 可绘制物（根61 + Interactive 11）
+│   └── Interactive/         11  ← 可拖拽交互元素（10 + SubplotPreRenderActions 1）
+├── Rendering/               26  ← Layer 5: 渲染（RenderManager 1 + RenderActions 25）
 │   └── RenderActions/       25  ← 每步一个独立文件
 ├── Interactivity/           37  ← Layer 6: 交互系统
-├── TickGenerators/          15  ← 刻度生成
+├── TickGenerators/          30  ← 刻度生成（根15 + Financial 5 + TimeUnits 10）
 ├── LayoutEngines/            5  ← 布局引擎
-├── AxisPanels/              11  ← 轴面板
+├── AxisPanels/              11  ← 轴面板（根10 + Experimental 1）
 ├── AxisRules/               17  ← 轴约束规则
 ├── AxisLimitManagers/        3  ← 实时轴范围管理
 ├── AutoScalers/              1  ← 自动缩放策略
@@ -137,7 +137,7 @@ ScottPlot5/
 ├── Colormaps/               38  ← 科学配色方案
 ├── Palettes/                26  ← 分类调色板
 ├── PathStrategies/           4  ← 连线策略（直线/样条/阶梯）
-├── Statistics/               6  ← 统计计算
+├── Statistics/               7  ← 统计计算（根6 + Tests 1）
 ├── Finance/                  2  ← 金融指标
 ├── Hatches/                  5  ← 图案填充
 ├── DataGenerators/           3  ← 实时数据生成
@@ -145,9 +145,16 @@ ScottPlot5/
 ├── FontResolvers/            2  ← 字体解析
 ├── Collections/              1  ← CircularBuffer
 ├── CompilerServices/         2  ← 编译时工具
-├── MultiplotLayouts/         2  ← 多图布局
+├── MultiplotLayouts/         5  ← 多图布局
 ├── LegendLayouts/            1  ← 图例排版
 ├── IO/                       1  ← I/O 辅助
+├── NamedColors/              7  ← 命名颜色集
+├── PlotStyles/               2  ← 图表样式
+├── Reporting/                3  ← 报表生成
+├── StarAxes/                 3  ← 极坐标/星形轴
+├── Stylers/                  2  ← 样式应用器
+├── Testing/                  4  ← 测试辅助
+├── Triangulation/            4  ← 三角剖分（热力图等）
 ```
 
 ---
@@ -301,7 +308,7 @@ Rendering/
 > 每步的职责表、输入输出、RenderPack 结构与关键 RenderAction 源码剖析：
 > 见 `learning/07-rendering.md`。
 
-### 3.6 `Interactivity/` — 交互系统 (~25 files)
+### 3.6 `Interactivity/` — 交互系统 (37 files)
 
 > 详细参考：`learning/08-interactivity.md`
 
@@ -337,19 +344,21 @@ Interactivity/
 #### 轴系统
 
 ```
-TickGenerators/ (15)
+TickGenerators/ (30)  ← 根15 + Financial(5) + TimeUnits(10)
 ├── NumericAutomatic/Manual/FixedInterval, DecimalTickSpacingCalculator
 ├── DateTimeAutomatic/Manual/FixedInterval, FinancialTickGenerator
 ├── LogMinorTickGenerator, EvenlySpacedMinorTickGenerator, EmptyTickGenerator
-└── LabelFormatters, IDateTimeTickGenerator, ITimeUnit
+├── LabelFormatters, IDateTimeTickGenerator, ITimeUnit
+├── Financial/ (5): Currency, EngineeringNotation, ...
+└── TimeUnits/ (10): Century, Decade, Year, Month, Day, Hour, ...
 
-AxisPanels/ (12)
+AxisPanels/ (11)  ← 根10 + Experimental(1)
 ├── AxisBase → BottomAxis, LeftAxis, RightAxis, TopAxis
 ├── DateTimeXAxis, XAxisBase, YAxisBase
 ├── MirroredXAxis, MirroredYAxis
 └── Experimental/LeftAxisWithSubtitle
 
-AxisRules/ (16)
+AxisRules/ (17)
 ├── LockedLeft/Right/Top/Bottom/CenterX/CenterY/Horizontal/Vertical
 ├── MaximumBoundary/Span, MinimumBoundary/Span
 └── SnapToTicksX/Y, SquarePreserveX/Y, SquareZoomOut
@@ -392,9 +401,10 @@ Palettes/   (26 files)  分类调色板：Category10/20、ColorblindFriendly、N
 #### 统计与数学
 
 ```
-Statistics/ (6)
+Statistics/ (7)  ← 根6 + Tests(1)
 ├── Histogram, Descriptive, LinearRegression,
 ├── KernelDensity, ProbabilityDensity, Series
+└── Tests/ ← 统计单元测试
 
 Finance/ (2)
 ├── BollingerBands, SimpleMovingAverage
@@ -404,15 +414,22 @@ Finance/ (2)
 
 ```
 PathStrategies/ (4)       连线策略：Straight, QuadHalfPoint(阶梯), CubicSpline, Arrows
-ArrowShapes/ (7)          箭头形状：Arrowhead, Chevron, Pentagon, Double, Single, ...
+ArrowShapes/ (8)          箭头形状：Arrowhead, Chevron, Pentagon, Double, Single, ...
 Hatches/ (5)              图案填充：Checker, Dots, Grid, Square, Striped
 DataGenerators/ (3)       实时数据生成：FinancialDataGenerator, RandomWalker, RandomWalker2D
 DataViews/ (3)            数据流视图：Scroll, Wipe, IDataStreamerView
 FontResolvers/ (2)        字体解析：SystemFontResolver, FileFontResolver
 Collections/ (1)          CircularBuffer
 CompilerServices/ (2)     CompilerServices, Index
-MultiplotLayouts/ (2)     Columns, CustomGrid
+MultiplotLayouts/ (5)     Columns, CustomGrid, Rows, UniformGrid, ...
 IO/ (1)                   BitmapHeader
+NamedColors/ (7)          命名颜色集
+PlotStyles/ (2)           图表样式
+Reporting/ (3)            报表生成
+StarAxes/ (3)             极坐标/星形轴
+Stylers/ (2)              样式应用器
+Testing/ (4)              测试辅助
+Triangulation/ (4)        三角剖分（热力图等）
 ```
 
 ---

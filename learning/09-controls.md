@@ -1,6 +1,6 @@
 # ScottPlot 5 跨平台控件与多图系统
 
-> 8 个控件包（7 套平台控件 + 1 个 GPU 扩展）· 39 个 .cs · ~3,000 行 · IPlotControl + IPlotMenu + IMultiplot
+> 8 个控件包（7 套平台控件 + 1 个 GPU 扩展）· 55 个 .cs · ~3,000 行 · IPlotControl + IPlotMenu + IMultiplot
 
 ---
 
@@ -22,7 +22,7 @@ src/ScottPlot5/
     └── ScottPlot.OpenGL/            → NuGet: ScottPlot.OpenGL  (GPU 加速扩展)
 ```
 
-每个包只有 **3~11 个 .cs 源文件**（WinForms 11、WPF 7、其余 3~4），各平台代码高度对称。
+每个包只有 **3~9 个 .cs 源文件**（WinForms 9、WPF 7、Maui 9、其余 3~4），各平台代码高度对称。OpenGL 包额外有 17 个 .cs（含 GLPrograms Shader）。
 
 ---
 

@@ -292,7 +292,7 @@ control.Reset(new Plot());         // 替换整个 Plot
 
 ## 六、常见陷阱
 
-> 完整的 15 条陷阱清单（含源码证据与踩坑概率评级）：见
+> 完整的 29 条陷阱清单（含源码证据与踩坑概率评级）：见
 > [10-usage-caveats.md](10-usage-caveats.md)。此处仅列新手最高频的 5 条。
 
 ### 🥇 陷阱 1：忘记 Refresh()
