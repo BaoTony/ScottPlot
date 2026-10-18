@@ -1,0 +1,188 @@
+ScottPlot5 版本：5.1.60
+
+==============================================================================
+一、解决方案全貌（src/ScottPlot5 下各项目）
+==============================================================================
+  ScottPlot5                     577 个 .cs      50071 行
+  ScottPlot5 Benchmarks            5 个 .cs        148 行
+  ScottPlot5 Controls             55 个 .cs       4400 行
+  ScottPlot5 Cookbook             92 个 .cs      11857 行
+  ScottPlot5 Demos               125 个 .cs       8060 行
+  ScottPlot5 Sandbox              55 个 .cs       1768 行
+  ScottPlot5 Tests                95 个 .cs       8720 行
+
+==============================================================================
+二、核心库分层地图（ScottPlot5 各目录 .cs 文件数）
+==============================================================================
+  (根目录散文件)                        23
+  ArrowShapes                      8
+  AutoScalers                      1
+  AxisLimitManagers                3
+  AxisPanels                      11
+  AxisRules                       17
+  Collections                      1
+  Colormaps                       38
+  CompilerServices                 2
+  DataGenerators                   3
+  DataSources                     28
+  DataViews                        3
+  Finance                          2
+  FontResolvers                    2
+  Grids                            1
+  Hatches                          5
+  IO                               1
+  Interactivity                   37
+  Interfaces                      51
+  LayoutEngines                    5
+  LegendLayouts                    1
+  Markers                         26
+  MultiplotLayouts                 5
+  NamedColors                      7
+  Palettes                        26
+  Panels                           4
+  PathStrategies                   4
+  PlotStyles                       2
+  Plottables                      72
+  Primitives                     109
+  Rendering                       26
+  Reporting                        3
+  StarAxes                         3
+  Statistics                       7
+  Stylers                          2
+  Testing                          4
+  TickGenerators                  30
+  Triangulation                    4
+
+==============================================================================
+三、Primitives 基础类型分类
+==============================================================================
+  struct          37 个  Angle, AxisLimits, AxisLimits3d, Color, Colors, ContextMenuItem, CoordinateLine, CoordinateOffset ... 等 37 个
+  record struct    3 个  ContourLine, IndexRange, PixelOffset
+  class           46 个  ArrowStyle, Axes, AxisGradientColorPosition, AxisSpanUnderMouse, BackgroundStyle, Bar, BarSeries, Box ... 等 46 个
+  interface        2 个  IAutoScaler, IAxisLimitManager
+  enum            21 个  Alignment, ArrowAnchor, ArrowShape, AxisGradientDirection, ConnectStyle, Cursor, Edge, FontSlant ... 等 21 个
+
+==============================================================================
+四、核心库接口（interface）统计
+==============================================================================
+  合计 63 个接口，分布：
+    Interfaces              51 个  IArrowShape, IAxes, IAxis, IAxisRule, IColormap, IDataSource ...
+    Interactivity            4 个  IMouseAction, IMouseButtonAction, IUserAction, IUserActionResponse
+    Primitives               2 个  IAutoScaler, IAxisLimitManager
+    TickGenerators           2 个  IDateTimeTickGenerator, ITimeUnit
+    DataViews                1 个  IDataStreamerView
+    NamedColors              1 个  INamedColors
+    Plottables               1 个  IRenderStrategy
+    Triangulation            1 个  IEdge
+
+==============================================================================
+五、DataSources 类型与实现的接口
+==============================================================================
+  CacheScatterLimitsDecorator            class          IScatterSource, IScatterSource
+  CoordinateDataSource                   class          IDataSource
+  DataLoggerSource                       class          (基类间接实现)
+  DataStreamerSource                     class          (基类间接实现)
+  FastSignalSourceDouble                 class          ISignalSource, IDataSource
+  FunctionSource                         class          IFunctionSource
+  GrowListView                           class          (基类间接实现)
+  ListViewDecorator                      class          (基类间接实现)
+  MinMaxCache                            class          (基类间接实现)
+  OHLCSourceArray                        class          IOHLCSource
+  OHLCSourceBase                         class          IOHLCSource
+  OHLCSourceList                         class          IOHLCSource
+  ReadOnlyListExtensions                 class          (基类间接实现)
+  ScatterSourceCoordinatesArray          class          IScatterSource, IDataSource
+  ScatterSourceCoordinatesList           class          IScatterSource, IDataSource
+  ScatterSourceDoubleArray               class          IScatterSource, IDataSource
+  ScatterSourceGenericArray              class          IScatterSource, IDataSource
+  ScatterSourceGenericList               class          IScatterSource, IDataSource
+  SegmentedTree                          class          (基类间接实现)
+  SelectListView                         class          (基类间接实现)
+  SignalConstSource                      class          (基类间接实现)
+  SignalInterpolation                    class          (基类间接实现)
+  SignalRangeY                           struct         (基类间接实现)
+  SignalSourceBase                       class          (基类间接实现)
+  SignalSourceDouble                     class          ISignalSource, IDataSource
+  SignalSourceGenericArray               class          ISignalSource, IDataSource
+  SignalSourceGenericList                class          ISignalSource, IDataSource
+  SignalXYSourceDoubleArray              class          ISignalXYSource, IDataSource
+  SignalXYSourceGenericArray             class          ISignalXYSource, IDataSource
+  SignalXYSourceGenericList              class          ISignalXYSource, IDataSource
+  SkipListView                           class          (基类间接实现)
+  TakeListView                           class          (基类间接实现)
+  VectorFieldDataSourceCoordinatesList   class          IVectorFieldSource, IDataSource
+  ZipListView                            class          (基类间接实现)
+
+==============================================================================
+六、Plottable 图表类（实现 IPlottable）
+==============================================================================
+  Plottables/Interactive           10 个
+  Plottables 根目录           61 个
+  Plottables 合计             72 个（= 根目录 + 各子目录）
+  （按类声明识别：常规 54 个，Interactive 10 个；部分类经由 PlottableBase 间接实现 IPlottable，故文件数为准）
+
+==============================================================================
+七、RenderManager 渲染管线步骤
+==============================================================================
+   1. PreRenderLock
+   2. ClearCanvas
+   3. ReplaceNullAxesWithDefaults
+   4. AutoScaleUnsetAxes
+   5. ContinuouslyAutoscale
+   6. ExecutePlottableAxisManagers
+   7. ApplyAxisRulesBeforeLayout
+   8. CalculateLayout
+   9. RenderFigureBackground
+  10. ApplyAxisRulesAfterLayout
+  11. RegenerateTicks
+  12. RenderStartingEvent
+  13. RenderDataBackground
+  14. StoreGLState
+  15. RenderGridsBelowPlottables
+  16. RestoreGLState
+  17. RenderPlottables
+  18. RenderGridsAbovePlottables
+  19. RenderLegends
+  20. RenderPanels
+  21. RenderBorders
+  22. RenderZoomRectangle
+  23. SyncGLPlottables
+  24. RenderPlottablesLast
+  25. RenderBenchmark
+  （管道中调用 25 步；RenderActions 目录文件数 25）
+
+==============================================================================
+八、Plot.Add 添加方法（PlottableAdder.cs）
+==============================================================================
+  分部文件数：1；添加方法合计 127 个（含重载）
+
+==============================================================================
+九、Interactivity 交互层
+==============================================================================
+  UserActions（用户输入动作）：12 个 → KeyDown, KeyUp, LeftMouseDown, LeftMouseUp, MiddleMouseDown, MiddleMouseUp, MouseMove, MouseWheelDown, MouseWheelUp, RightMouseDown, RightMouseUp, Unknown
+  UserActionResponses（响应器文件）：13 个 → DoubleClickBenchmark, DoubleClickResponse, KeyPressResponse, KeyboardAutoscale, KeyboardPanAndZoom, MouseDragPan, MouseDragZoom, MouseDragZoomRectangle, MouseInteractWithPlottables, MouseWheelZoom, SingleClickAutoscale, SingleClickContextMenu, SingleClickResponse
+  UserInputProcessor 默认注册：10 个（13 处调用）
+    → MouseInteractWithPlottables, MouseDragZoomRectangle, MouseDragPan, MouseDragZoom, MouseWheelZoom, SingleClickAutoscale, SingleClickContextMenu, DoubleClickBenchmark, KeyboardPanAndZoom, KeyboardAutoscale
+
+==============================================================================
+十、常用枚举与集合口径
+==============================================================================
+  MarkerShape       26 个成员  （MarkerShape.cs）
+  ArrowShape         8 个成员  （ArrowShape.cs）
+  Edge               4 个成员  （Edge.cs）
+  Alignment          9 个成员  （Alignment.cs）
+  IColormap 实现：38 个；IPalette 实现：26 个
+
+==============================================================================
+十一、平台控件（ScottPlot5 Controls）
+==============================================================================
+  ScottPlot.Avalonia          4 个 .cs   IPlotControl 实现: AvaPlot
+  ScottPlot.Blazor            4 个 .cs   IPlotControl 实现: BlazorPlotBase
+  ScottPlot.Eto               3 个 .cs   IPlotControl 实现: EtoPlot
+  ScottPlot.Maui              9 个 .cs   IPlotControl 实现: MauiPlot
+  ScottPlot.OpenGL           17 个 .cs   IPlotControl 实现: -
+  ScottPlot.WPF               7 个 .cs   IPlotControl 实现: WpfPlotBase
+  ScottPlot.WinForms          8 个 .cs   IPlotControl 实现: FormsPlotBase
+  ScottPlot.WinUI             3 个 .cs   IPlotControl 实现: WinUIPlot
+
+（统计完成）

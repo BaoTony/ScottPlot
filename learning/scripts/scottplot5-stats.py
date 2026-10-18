@@ -8,7 +8,7 @@
 
 运行：python learning/scripts/scottplot5-stats.py           # 人类可读输出
       python learning/scripts/scottplot5-stats.py --json    # 纯 JSON 输出（可重定向落盘做前后 diff）
-      python learning/scripts/scottplot5-stats.py --out     # 一键落盘：txt+md+json 三格式保存到桌面
+      python learning/scripts/scottplot5-stats.py --out     # 一键落盘：txt+md+json 三格式保存到桌面（文件名含版本号）
       python learning/scripts/scottplot5-stats.py --out X   # 同上，但保存到指定目录
       python learning/scripts/scottplot5-stats.py --sln X   # 指定源码根目录（默认按脚本位置自动推导）
 """
@@ -192,9 +192,10 @@ def parse_args():
     ap.add_argument('--json', action='store_true', help='仅输出纯 JSON 统计结果')
     ap.add_argument('--out', nargs='?', const='', default=None, metavar='目录',
                     help='一键落盘：不带值时保存到桌面；也可指定输出目录。'
-                         '会同时生成 scottplot5-stats.txt（终端文本原样）、'
-                         'scottplot5-stats.md（Markdown 表格）与 '
-                         'scottplot5-stats.json（机器可读），同名旧文件被覆盖')
+                         '会同时生成 scottplot5-stats-v<版本>.txt（终端文本原样）、'
+                         'scottplot5-stats-v<版本>.md（Markdown 表格）与 '
+                         'scottplot5-stats-v<版本>.json（机器可读），同名旧文件被覆盖；'
+                         '文件名含版本号便于跨版本比对')
     return ap.parse_args()
 
 
@@ -435,13 +436,15 @@ def main():
     else:
         out('\n（统计完成）')
 
-    # --out 落盘：txt+md+json 三格式（不带值默认桌面；同名旧文件覆盖）
+    # --out 落盘：txt+md+json 三格式（文件名含版本号，便于跨版本比对；不带值默认桌面）
     if args.out is not None:
         out_dir = args.out or default_out_dir()
         os.makedirs(out_dir, exist_ok=True)
-        txt_path = os.path.join(out_dir, 'scottplot5-stats.txt')
-        md_path = os.path.join(out_dir, 'scottplot5-stats.md')
-        json_path = os.path.join(out_dir, 'scottplot5-stats.json')
+        # 版本号用于文件名，若含特殊字符则替换为下划线（版本号通常为数字+点，此处防御性处理）
+        ver_tag = re.sub(r'[^\w.]', '_', version)
+        txt_path = os.path.join(out_dir, f'scottplot5-stats-v{ver_tag}.txt')
+        md_path = os.path.join(out_dir, f'scottplot5-stats-v{ver_tag}.md')
+        json_path = os.path.join(out_dir, f'scottplot5-stats-v{ver_tag}.json')
         # 人类可读版（终端文本原样）：写入行缓冲中收集的全部输出行（UTF-8 无 BOM，便于 diff）
         with open(txt_path, 'w', encoding='utf-8', newline='\n') as fp:
             fp.write('\n'.join(_LINES))

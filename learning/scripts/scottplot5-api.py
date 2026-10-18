@@ -14,7 +14,7 @@
 运行（需 Python 3.13+ 与 tree-sitter 依赖，无预编译 wheel 的版本不可用）：
       py -3.13 learning/scripts/scottplot5-api.py           # Markdown 输出到终端
       py -3.13 learning/scripts/scottplot5-api.py --json    # 纯 JSON 输出
-      py -3.13 learning/scripts/scottplot5-api.py --out     # 一键落盘：md+json 保存到桌面
+      py -3.13 learning/scripts/scottplot5-api.py --out     # 一键落盘：md+json 保存到桌面（文件名含版本号）
       py -3.13 learning/scripts/scottplot5-api.py --out X   # 同上，但保存到指定目录
       py -3.13 learning/scripts/scottplot5-api.py --sln X   # 指定源码根目录（默认按脚本位置自动推导）
 """
@@ -377,7 +377,8 @@ def parse_args():
     ap.add_argument('--json', action='store_true', help='仅输出纯 JSON 统计结果')
     ap.add_argument('--out', nargs='?', const='', default=None, metavar='目录',
                     help='一键落盘：不带值时保存到桌面；也可指定输出目录。'
-                         '同时生成 scottplot5-api.md 与 scottplot5-api.json')
+                         '同时生成 scottplot5-api-v<版本>.md 与 scottplot5-api-v<版本>.json；'
+                         '文件名含版本号便于跨版本比对')
     return ap.parse_args()
 
 
@@ -397,12 +398,14 @@ def main():
     result['totals'] = totals
     result['namespaces'] = namespaces
 
-    # 落盘：md+json 双格式（默认桌面，可指定目录）
+    # 落盘：md+json 双格式（文件名含版本号，便于跨版本比对；默认桌面，可指定目录）
     if args.out is not None:
         out_dir = args.out or default_out_dir()
         os.makedirs(out_dir, exist_ok=True)
-        md_path = os.path.join(out_dir, 'scottplot5-api.md')
-        json_path = os.path.join(out_dir, 'scottplot5-api.json')
+        # 版本号用于文件名，若含特殊字符则替换为下划线（版本号通常为数字+点，此处防御性处理）
+        ver_tag = re.sub(r'[^\w.]', '_', version)
+        md_path = os.path.join(out_dir, f'scottplot5-api-v{ver_tag}.md')
+        json_path = os.path.join(out_dir, f'scottplot5-api-v{ver_tag}.json')
         with open(md_path, 'w', encoding='utf-8', newline='\n') as fp:
             fp.write(build_markdown(namespaces, totals, version))
         with open(json_path, 'w', encoding='utf-8', newline='\n') as fp:

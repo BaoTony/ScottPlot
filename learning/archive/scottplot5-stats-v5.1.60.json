@@ -1,0 +1,790 @@
+{
+  "version": "5.1.60",
+  "solution": {
+    "ScottPlot5": {
+      "files": 577,
+      "lines": 50071
+    },
+    "ScottPlot5 Benchmarks": {
+      "files": 5,
+      "lines": 148
+    },
+    "ScottPlot5 Controls": {
+      "files": 55,
+      "lines": 4400
+    },
+    "ScottPlot5 Cookbook": {
+      "files": 92,
+      "lines": 11857
+    },
+    "ScottPlot5 Demos": {
+      "files": 125,
+      "lines": 8060
+    },
+    "ScottPlot5 Sandbox": {
+      "files": 55,
+      "lines": 1768
+    },
+    "ScottPlot5 Tests": {
+      "files": 95,
+      "lines": 8720
+    }
+  },
+  "core_layout": {
+    "(根目录散文件)": 23,
+    "ArrowShapes": 8,
+    "AutoScalers": 1,
+    "AxisLimitManagers": 3,
+    "AxisPanels": 11,
+    "AxisRules": 17,
+    "Collections": 1,
+    "Colormaps": 38,
+    "CompilerServices": 2,
+    "DataGenerators": 3,
+    "DataSources": 28,
+    "DataViews": 3,
+    "Finance": 2,
+    "FontResolvers": 2,
+    "Grids": 1,
+    "Hatches": 5,
+    "IO": 1,
+    "Interactivity": 37,
+    "Interfaces": 51,
+    "LayoutEngines": 5,
+    "LegendLayouts": 1,
+    "Markers": 26,
+    "MultiplotLayouts": 5,
+    "NamedColors": 7,
+    "Palettes": 26,
+    "Panels": 4,
+    "PathStrategies": 4,
+    "PlotStyles": 2,
+    "Plottables": 72,
+    "Primitives": 109,
+    "Rendering": 26,
+    "Reporting": 3,
+    "StarAxes": 3,
+    "Statistics": 7,
+    "Stylers": 2,
+    "Testing": 4,
+    "TickGenerators": 30,
+    "Triangulation": 4
+  },
+  "primitives": {
+    "struct": [
+      "Angle",
+      "AxisLimits",
+      "AxisLimits3d",
+      "Color",
+      "Colors",
+      "ContextMenuItem",
+      "CoordinateLine",
+      "CoordinateOffset",
+      "CoordinatePath",
+      "CoordinateRange",
+      "CoordinateRect",
+      "CoordinateSize",
+      "Coordinates",
+      "Coordinates3d",
+      "DataPoint",
+      "FractionRect",
+      "Layout",
+      "LegendLayout",
+      "LinePattern",
+      "MeasuredText",
+      "OHLC",
+      "Pixel",
+      "PixelColumn",
+      "PixelLength",
+      "PixelLine",
+      "PixelPadding",
+      "PixelPath",
+      "PixelRangeX",
+      "PixelRangeY",
+      "PixelRect",
+      "PixelSize",
+      "PolarCoordinates",
+      "Range",
+      "RenderDetails",
+      "RootedCoordinateVector",
+      "RootedPixelVector",
+      "Tick"
+    ],
+    "record struct": [
+      "ContourLine",
+      "IndexRange",
+      "PixelOffset"
+    ],
+    "class": [
+      "ArrowStyle",
+      "Axes",
+      "AxisGradientColorPosition",
+      "AxisSpanUnderMouse",
+      "BackgroundStyle",
+      "Bar",
+      "BarSeries",
+      "Box",
+      "CanvasState",
+      "Colormap",
+      "CoordinateRangeMutable",
+      "CountingCollection",
+      "ExpandingAxisLimits",
+      "FillStyle",
+      "FontStyle",
+      "Gradient",
+      "GridCell",
+      "GridStyle",
+      "InteractiveHandle",
+      "LabelStyle",
+      "LabelStyleProperties",
+      "Legend",
+      "LegendItem",
+      "Line",
+      "LineStyle",
+      "LinkedAxisRule",
+      "Location",
+      "MarkerStyle",
+      "MultiAxisLimits",
+      "MultiplotLayoutSnapshot",
+      "MutableCoordinateLine",
+      "Paint",
+      "Palette",
+      "PieSlice",
+      "Platform",
+      "PlotStyle",
+      "PolarAxisCircle",
+      "PolarAxisSpoke",
+      "Population",
+      "RadarSeries",
+      "SavedImageInfo",
+      "SubplotCollection",
+      "SvgImage",
+      "TickMarkStyle",
+      "TriangularAxisCornerLabel",
+      "TriangularAxisEdge"
+    ],
+    "interface": [
+      "IAutoScaler",
+      "IAxisLimitManager"
+    ],
+    "enum": [
+      "Alignment",
+      "ArrowAnchor",
+      "ArrowShape",
+      "AxisGradientDirection",
+      "ConnectStyle",
+      "Cursor",
+      "Edge",
+      "FontSlant",
+      "FontSpacing",
+      "FontWeight",
+      "GradientType",
+      "HorizontalAlignment",
+      "Image",
+      "ImageFormat",
+      "ImagePosition",
+      "LocationUnit",
+      "MarkerShape",
+      "Orientation",
+      "RadialGaugeMode",
+      "ResizeFilter",
+      "VerticalAlignment"
+    ]
+  },
+  "interfaces": {
+    "total": 63,
+    "by_dir": {
+      "DataViews": [
+        "IDataStreamerView"
+      ],
+      "Interactivity": [
+        "IMouseAction",
+        "IMouseButtonAction",
+        "IUserAction",
+        "IUserActionResponse"
+      ],
+      "Interfaces": [
+        "IArrowShape",
+        "IAxes",
+        "IAxis",
+        "IAxisRule",
+        "IColormap",
+        "IDataSource",
+        "IFinancialTickGenerator",
+        "IFontResolver",
+        "IFunctionSource",
+        "IGetNearest",
+        "IGrid",
+        "IHasArrow",
+        "IHasBackground",
+        "IHasColorAxis",
+        "IHasFill",
+        "IHasInteractiveHandles",
+        "IHasLabel",
+        "IHasLegendText",
+        "IHasLine",
+        "IHasMarker",
+        "IHasOutline",
+        "IHasShadow",
+        "IHatch",
+        "ILayoutEngine",
+        "ILegendLayout",
+        "IManagesAxisLimits",
+        "IMarker",
+        "IMinorTickGenerator",
+        "IMultiThreadedPlotControl",
+        "IMultiplot",
+        "IMultiplotLayout",
+        "IMultiplotPreRenderAction",
+        "IOHLCSource",
+        "IPalette",
+        "IPanel",
+        "IPathStrategy",
+        "IPlotControl",
+        "IPlotMenu",
+        "IPlottable",
+        "IPlottableGL",
+        "IRenderAction",
+        "IRenderLast",
+        "IScatterSource",
+        "ISignalSource",
+        "ISignalXYSource",
+        "IStarAxis",
+        "ITickGenerator",
+        "IVectorFieldSource",
+        "IXAxis",
+        "IYAxis",
+        "IZoomRectangle"
+      ],
+      "NamedColors": [
+        "INamedColors"
+      ],
+      "Plottables": [
+        "IRenderStrategy"
+      ],
+      "Primitives": [
+        "IAutoScaler",
+        "IAxisLimitManager"
+      ],
+      "TickGenerators": [
+        "IDateTimeTickGenerator",
+        "ITimeUnit"
+      ],
+      "Triangulation": [
+        "IEdge"
+      ]
+    }
+  },
+  "data_sources": [
+    {
+      "name": "CacheScatterLimitsDecorator",
+      "kind": "class",
+      "bases": "IScatterSource, IScatterSource"
+    },
+    {
+      "name": "CoordinateDataSource",
+      "kind": "class",
+      "bases": "IDataSource"
+    },
+    {
+      "name": "DataLoggerSource",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "DataStreamerSource",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "FastSignalSourceDouble",
+      "kind": "class",
+      "bases": "ISignalSource, IDataSource"
+    },
+    {
+      "name": "FunctionSource",
+      "kind": "class",
+      "bases": "IFunctionSource"
+    },
+    {
+      "name": "GrowListView",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "ListViewDecorator",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "MinMaxCache",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "OHLCSourceArray",
+      "kind": "class",
+      "bases": "IOHLCSource"
+    },
+    {
+      "name": "OHLCSourceBase",
+      "kind": "class",
+      "bases": "IOHLCSource"
+    },
+    {
+      "name": "OHLCSourceList",
+      "kind": "class",
+      "bases": "IOHLCSource"
+    },
+    {
+      "name": "ReadOnlyListExtensions",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "ScatterSourceCoordinatesArray",
+      "kind": "class",
+      "bases": "IScatterSource, IDataSource"
+    },
+    {
+      "name": "ScatterSourceCoordinatesList",
+      "kind": "class",
+      "bases": "IScatterSource, IDataSource"
+    },
+    {
+      "name": "ScatterSourceDoubleArray",
+      "kind": "class",
+      "bases": "IScatterSource, IDataSource"
+    },
+    {
+      "name": "ScatterSourceGenericArray",
+      "kind": "class",
+      "bases": "IScatterSource, IDataSource"
+    },
+    {
+      "name": "ScatterSourceGenericList",
+      "kind": "class",
+      "bases": "IScatterSource, IDataSource"
+    },
+    {
+      "name": "SegmentedTree",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "SelectListView",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "SignalConstSource",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "SignalInterpolation",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "SignalRangeY",
+      "kind": "struct",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "SignalSourceBase",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "SignalSourceDouble",
+      "kind": "class",
+      "bases": "ISignalSource, IDataSource"
+    },
+    {
+      "name": "SignalSourceGenericArray",
+      "kind": "class",
+      "bases": "ISignalSource, IDataSource"
+    },
+    {
+      "name": "SignalSourceGenericList",
+      "kind": "class",
+      "bases": "ISignalSource, IDataSource"
+    },
+    {
+      "name": "SignalXYSourceDoubleArray",
+      "kind": "class",
+      "bases": "ISignalXYSource, IDataSource"
+    },
+    {
+      "name": "SignalXYSourceGenericArray",
+      "kind": "class",
+      "bases": "ISignalXYSource, IDataSource"
+    },
+    {
+      "name": "SignalXYSourceGenericList",
+      "kind": "class",
+      "bases": "ISignalXYSource, IDataSource"
+    },
+    {
+      "name": "SkipListView",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "TakeListView",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    },
+    {
+      "name": "VectorFieldDataSourceCoordinatesList",
+      "kind": "class",
+      "bases": "IVectorFieldSource, IDataSource"
+    },
+    {
+      "name": "ZipListView",
+      "kind": "class",
+      "bases": "(基类间接实现)"
+    }
+  ],
+  "plottables": {
+    "by_dir": {
+      "Interactive": 10
+    },
+    "root": 61,
+    "total": 72,
+    "by_class_declaration": {
+      "normal": 54,
+      "interactive": 10
+    }
+  },
+  "render_pipeline": {
+    "steps": [
+      "PreRenderLock",
+      "ClearCanvas",
+      "ReplaceNullAxesWithDefaults",
+      "AutoScaleUnsetAxes",
+      "ContinuouslyAutoscale",
+      "ExecutePlottableAxisManagers",
+      "ApplyAxisRulesBeforeLayout",
+      "CalculateLayout",
+      "RenderFigureBackground",
+      "ApplyAxisRulesAfterLayout",
+      "RegenerateTicks",
+      "RenderStartingEvent",
+      "RenderDataBackground",
+      "StoreGLState",
+      "RenderGridsBelowPlottables",
+      "RestoreGLState",
+      "RenderPlottables",
+      "RenderGridsAbovePlottables",
+      "RenderLegends",
+      "RenderPanels",
+      "RenderBorders",
+      "RenderZoomRectangle",
+      "SyncGLPlottables",
+      "RenderPlottablesLast",
+      "RenderBenchmark"
+    ],
+    "render_action_files": 25
+  },
+  "plot_add": {
+    "partial_files": 1,
+    "method_count": 127,
+    "methods": [
+      "Annotation",
+      "AnnularEllipticalSector",
+      "AnnularEllipticalSector",
+      "AnnularSector",
+      "AnnularSector",
+      "Arc",
+      "Arc",
+      "Arrow",
+      "Arrow",
+      "Arrow",
+      "BackgroundText",
+      "Bar",
+      "Bar",
+      "Bars",
+      "Bars",
+      "Bars",
+      "Bars",
+      "Box",
+      "Boxes",
+      "Bracket",
+      "Bracket",
+      "Bracket",
+      "Callout",
+      "Callout",
+      "Candlestick",
+      "Candlestick",
+      "Circle",
+      "Circle",
+      "CircleSector",
+      "CircleSector",
+      "ColorBar",
+      "ContourLines",
+      "ContourLines",
+      "Coxcomb",
+      "Coxcomb",
+      "Crosshair",
+      "DataLogger",
+      "DataLogger",
+      "DataStreamer",
+      "DataStreamerXY",
+      "Ellipse",
+      "Ellipse",
+      "EllipticalArc",
+      "EllipticalArc",
+      "EllipticalSector",
+      "EllipticalSector",
+      "ErrorBar",
+      "FillY",
+      "FillY",
+      "FillY",
+      "Function",
+      "Function",
+      "Heatmap",
+      "Heatmap",
+      "Histogram",
+      "HorizontalLine",
+      "HorizontalSpan",
+      "ImageMarker",
+      "ImageRect",
+      "InteractiveHorizontalLine",
+      "InteractiveHorizontalLineSegment",
+      "InteractiveHorizontalSpan",
+      "InteractiveLineSegment",
+      "InteractiveMarker",
+      "InteractiveRectangle",
+      "InteractiveTrendLine",
+      "InteractiveVerticalLine",
+      "InteractiveVerticalLineSegment",
+      "InteractiveVerticalSpan",
+      "Legend",
+      "Line",
+      "Line",
+      "Line",
+      "Lollipop",
+      "Lollipop",
+      "Lollipop",
+      "Marker",
+      "Marker",
+      "Markers",
+      "Markers",
+      "Markers",
+      "OHLC",
+      "Phasor",
+      "Phasor",
+      "Pie",
+      "Pie",
+      "Plottable",
+      "PolarAxis",
+      "Polygon",
+      "Population",
+      "Radar",
+      "Radar",
+      "Radar",
+      "Radar",
+      "RadialGaugePlot",
+      "Ranges",
+      "Rectangle",
+      "Rectangle",
+      "ScaleBar",
+      "Scatter",
+      "Scatter",
+      "Scatter",
+      "Scatter",
+      "Scatter",
+      "Scatter",
+      "ScatterLine",
+      "ScatterLine",
+      "ScatterLine",
+      "ScatterLine",
+      "ScatterPoints",
+      "ScatterPoints",
+      "ScatterPoints",
+      "ScatterPoints",
+      "Signal",
+      "Signal",
+      "SignalXY",
+      "SignalXY",
+      "SmithChartAxis",
+      "StackedRanges",
+      "Text",
+      "Text",
+      "Tooltip",
+      "Tooltip",
+      "TriangularAxis",
+      "VectorField",
+      "VerticalLine",
+      "VerticalSpan"
+    ]
+  },
+  "interactivity": {
+    "user_actions": [
+      "KeyDown",
+      "KeyUp",
+      "LeftMouseDown",
+      "LeftMouseUp",
+      "MiddleMouseDown",
+      "MiddleMouseUp",
+      "MouseMove",
+      "MouseWheelDown",
+      "MouseWheelUp",
+      "RightMouseDown",
+      "RightMouseUp",
+      "Unknown"
+    ],
+    "responses": [
+      "DoubleClickBenchmark",
+      "DoubleClickResponse",
+      "KeyPressResponse",
+      "KeyboardAutoscale",
+      "KeyboardPanAndZoom",
+      "MouseDragPan",
+      "MouseDragZoom",
+      "MouseDragZoomRectangle",
+      "MouseInteractWithPlottables",
+      "MouseWheelZoom",
+      "SingleClickAutoscale",
+      "SingleClickContextMenu",
+      "SingleClickResponse"
+    ],
+    "default_registered": [
+      "MouseInteractWithPlottables",
+      "MouseDragZoomRectangle",
+      "MouseDragPan",
+      "MouseDragZoom",
+      "MouseWheelZoom",
+      "SingleClickAutoscale",
+      "SingleClickContextMenu",
+      "DoubleClickBenchmark",
+      "KeyboardPanAndZoom",
+      "KeyboardAutoscale"
+    ],
+    "default_call_sites": 13
+  },
+  "enums": {
+    "MarkerShape": 26,
+    "ArrowShape": 8,
+    "Edge": 4,
+    "Alignment": 9
+  },
+  "colormaps": [
+    "Algae",
+    "Amp",
+    "Balance",
+    "Blues",
+    "Curl",
+    "Custom",
+    "CustomInterpolated",
+    "CustomPalette",
+    "Deep",
+    "Delta",
+    "Dense",
+    "Diff",
+    "Grayscale",
+    "GrayscaleReversed",
+    "Greens",
+    "Haline",
+    "Ice",
+    "Inferno",
+    "Inverted",
+    "InvertedHue",
+    "Jet",
+    "Magma",
+    "Matter",
+    "MellowRainbow",
+    "Oxy",
+    "Phase",
+    "Plasma",
+    "Rain",
+    "Reversed",
+    "Solar",
+    "Speed",
+    "Tarn",
+    "Tempo",
+    "Thermal",
+    "Topo",
+    "Turbid",
+    "Turbo",
+    "Viridis"
+  ],
+  "palettes": [
+    "Amber",
+    "Aurora",
+    "Building",
+    "Category10",
+    "Category20",
+    "ColorblindFriendly",
+    "ColorblindFriendlyDark",
+    "Custom",
+    "Dark",
+    "DarkPastel",
+    "Frost",
+    "LightOcean",
+    "LightSpectrum",
+    "Microcharts",
+    "Nero",
+    "Nord",
+    "Normal",
+    "OneHalf",
+    "OneHalfDark",
+    "PastelWheel",
+    "Penumbra",
+    "PolarNight",
+    "Redness",
+    "SnowStorm",
+    "SummerSplash",
+    "Tsitsulin"
+  ],
+  "platform_controls": {
+    "ScottPlot.Avalonia": {
+      "files": 4,
+      "impl": [
+        "AvaPlot"
+      ]
+    },
+    "ScottPlot.Blazor": {
+      "files": 4,
+      "impl": [
+        "BlazorPlotBase"
+      ]
+    },
+    "ScottPlot.Eto": {
+      "files": 3,
+      "impl": [
+        "EtoPlot"
+      ]
+    },
+    "ScottPlot.Maui": {
+      "files": 9,
+      "impl": [
+        "MauiPlot"
+      ]
+    },
+    "ScottPlot.OpenGL": {
+      "files": 17,
+      "impl": []
+    },
+    "ScottPlot.WPF": {
+      "files": 7,
+      "impl": [
+        "WpfPlotBase"
+      ]
+    },
+    "ScottPlot.WinForms": {
+      "files": 8,
+      "impl": [
+        "FormsPlotBase"
+      ]
+    },
+    "ScottPlot.WinUI": {
+      "files": 3,
+      "impl": [
+        "WinUIPlot"
+      ]
+    }
+  }
+}
