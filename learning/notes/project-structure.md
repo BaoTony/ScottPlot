@@ -1,399 +1,551 @@
 # ScottPlot 5 项目结构导航
 
-> 源码地图 · 对照 01-07 学习文档使用 · 2026-10-18
+> 以 `src/ScottPlot5/` 为根目录 · 源码地图 · 2026-10-18
 
 ---
 
-## 一、仓库顶层
-
-```
-ScottPlot/
-├── src/                        ← 所有源码
-│   └── ScottPlot5/             ← 唯一条目：ScottPlot 5 的完整解决方案
-├── learning/                   ← 【外部学习笔记，非项目源码】
-│   ├── 01-architecture/        ← 架构与数据链路
-│   ├── 02-primitives/          ← Primitives 层
-│   ├── 03-datasources/         ← 数据源系统
-│   ├── 04-plottables/          ← Plottables 层
-│   ├── 05-rendering/           ← 渲染管道
-│   ├── 06-interactivity/       ← 交互系统
-│   ├── 07-controls/            ← 跨平台控件
-│   └── notes/                  ← 实用笔记（入门指南、编译指南、本文）
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-├── README.md
-└── LICENSE
-```
-
----
-
-## 二、解决方案内部结构
+## 一、解决方案全景
 
 ```
 src/ScottPlot5/
-├── ScottPlot5/                 ← 🔷 核心库（NuGet 包：ScottPlot）
-├── ScottPlot5 Controls/        ← 🔶 跨平台控件（8 个 NuGet 包）
-├── ScottPlot5 Cookbook/        ← 📖 Cookbook 示例代码生成器
-├── ScottPlot5 Demos/           ← 🎮 演示程序
-├── ScottPlot5 Benchmarks/      ← ⏱  性能基准测试
-├── ScottPlot5 Tests/           ← 🧪 测试项目
+│
+├── ScottPlot5/                     ← 🔷 核心库（NuGet: ScottPlot）
+├── ScottPlot5 Controls/            ← 🔶 跨平台控件（8 个 NuGet 包）
+├── ScottPlot5 Cookbook/            ← 📖 示例代码生成器 → scottplot.net
+├── ScottPlot5 Demos/               ← 🎮 4 套演示程序
+├── ScottPlot5 Tests/               ← 🧪 测试项目
+├── ScottPlot5 Benchmarks/          ← ⏱  BenchmarkDotNet 性能测试
 ├── .editorconfig
-└── Key.snk                     ← 强名称签名密钥
+└── Key.snk                         ← 强名称签名密钥
 ```
 
 ---
 
-## 三、核心库详细结构 `ScottPlot5/`
+## 二、核心库 `ScottPlot5/` 内部结构
 
-### 3.1 根目录文件（API 入口层）
-
-| 文件 | 大小 | 职责 |
-|------|------|------|
-| **Plot.cs** | 大 | 用户主入口：`new Plot()`、`Add`、`SavePng`、`Render` |
-| **PlottableAdder.cs** | 大 | `Plot.Add.Scatter()` 等工厂方法（~60 个重载） |
-| **RenderPack.cs** | 中 | 单次渲染上下文：Canvas、Layout、Paint、Axes |
-| **AxisManager.cs** | 大 | 多轴管理器：添加/移除/查找轴、AutoScale |
-| **LayoutManager.cs** | 中 | 布局计算：数据区域 vs 面板区域 |
-| **Multiplot.cs** | 中 | 多图容器：`new Multiplot(plot)` |
-| **MultiplotSharedAxisManager.cs** | 中 | 多图共享轴管理器 |
-| **Drawing.cs** | 中 | 绘图辅助：DrawLines、DrawMarkers、DrawText |
-| **Generate.cs** | 中 | 示例数据生成器 |
-| **Fonts.cs** | 中 | 字体管理、检测、回退 |
-| **FontExtensions.cs** | 小 | 字体扩展方法 |
-| **ImageOperations.cs** | 中 | 图像操作：缩放、裁剪、Rotate |
-| **DataOperations.cs** | 中 | 数据操作：ResizeHalf、Convolve |
-| **DataSourceUtilities.cs** | 小 | 数据源辅助工具 |
-| **BinarySearchComparer.cs** | 小 | 双精度二分查找 |
-| **GenericComparer.cs** | 小 | 泛型比较器 |
-| **NumericConversion.cs** | 小 | 数值类型转换 |
-| **RandomDataGenerator.cs** | 中 | 随机数据生成（测试/示例用） |
-| **SampleData.cs** | 中 | 固定样本数据 |
-| **SampleImages.cs** | 中 | 内嵌示例图片 |
-| **Usings.cs** | — | 全局 using |
-| **Version.cs** | — | 版本号 |
-| **ScottPlot.csproj** | — | 项目文件（5 个 TFM） |
-
-### 3.2 目录分类
+### 2.1 根目录（API 入口层）
 
 ```
 ScottPlot5/
-├── Primitives/       ← Layer 2: 原子数据结构（109 个文件）
-├── Interfaces/       ← Layer 2: 核心接口定义（60+ 个接口）
-├── DataSources/      ← Layer 3: 数据源实现（28 个文件）
-├── Plottables/       ← Layer 4: 可绘制物（61 个文件）
-├── Rendering/        ← Layer 5: 渲染管道（仅 RenderManager.cs）
-├── Interactivity/    ← Layer 6: 交互系统
-├── TickGenerators/   ← 刻度生成器
-├── LayoutEngines/    ← 布局引擎
-├── LegendLayouts/    ← 图例布局
-├── AxisPanels/       ← 轴面板渲染
-├── AxisRules/        ← 轴约束规则
-├── AxisLimitManagers/← 实时轴范围管理
-├── AutoScalers/      ← 自动缩放策略
-├── Panels/           ← 图表面板（标题、图例、ColorBar）
-├── Grids/            ← 网格线
-├── Markers/          ← 标记形状绘制（26 种）
-├── ArrowShapes/      ← 箭头形状
-├── Colormaps/        ← 颜色映射（35 种配色）
-├── Hatches/          ← 图案填充
-├── Statistics/       ← 统计计算
-├── Finance/          ← 金融指标（布林带、SMA）
-├── DataGenerators/   ← 实时数据生成器
-├── DataViews/        ← 数据流视图
-├── FontResolvers/    ← 字体解析器
-├── Collections/      ← 数据结构（CircularBuffer）
-├── CompilerServices/ ← 编译时工具
-├── MultiplotLayouts/ ← 多图布局
-├── IO/               ← I/O 辅助
-└── LegendLayouts/    ← 图例排版
+├── Plot.cs                         ← 用户主入口：new Plot() / Add / SavePng / Render
+├── PlottableAdder.cs               ← Plot.Add.Scatter() 等 ~60 个工厂方法
+├── RenderPack.cs                   ← 单次渲染上下文：CanvasState, Layout, Paint, Elapsed
+├── AxisManager.cs                  ← 多轴管理器：Add/Remove/Find/AutoScale
+├── LayoutManager.cs                ← 布局计算：DataRect vs PanelRect
+├── Multiplot.cs                    ← 多图容器：new Multiplot(plot)
+├── MultiplotSharedAxisManager.cs   ← 多图共享轴
+├── Drawing.cs                      ← SkiaSharp 封装：DrawLines, DrawMarkers, DrawText
+├── Generate.cs                     ← 样本数据生成器
+├── Fonts.cs                        ← 字体检测/回退/管理
+├── FontExtensions.cs               ← 字体扩展方法
+├── ImageOperations.cs              ← 图像操作：Resize/Crop/Rotate
+├── DataOperations.cs               ← 数据操作：ResizeHalf/Convolve
+├── DataSourceUtilities.cs          ← 数据源辅助工具
+├── BinarySearchComparer.cs         ← 双精度二分查找
+├── GenericComparer.cs              ← 泛型比较器
+├── NumericConversion.cs            ← 数值类型转换
+├── RandomDataGenerator.cs          ← 随机数据生成（测试用）
+├── SampleData.cs                   ← 固定样本数据
+├── SampleImages.cs                 ← 内嵌示例图片
+├── Version.cs / Usings.cs          ← 版本号 / 全局 using
+├── ScottPlot.csproj                ← 项目文件（net462, netstandard2.0, net8/9/10）
+├── autoformat.bat / nuget-readme.md
+```
+
+### 2.2 目录分类一览
+
+```
+ScottPlot5/
+├── Primitives/             109  ← Layer 2: 原子数据结构
+├── Interfaces/             ~60  ← Layer 2: 核心接口
+├── DataSources/             28  ← Layer 3: 数据源实现
+├── Plottables/              61  ← Layer 4: 可绘制物
+│   └── Interactive/         11  ← 可拖拽交互元素
+├── Rendering/                1  ← Layer 5: 渲染入口
+│   └── RenderActions/       25  ← 每步一个独立文件
+├── Interactivity/           ~25  ← Layer 6: 交互系统
+├── TickGenerators/          15  ← 刻度生成
+├── LayoutEngines/            5  ← 布局引擎
+├── AxisPanels/              12  ← 轴面板
+├── AxisRules/               16  ← 轴约束规则
+├── AxisLimitManagers/        3  ← 实时轴范围管理
+├── AutoScalers/              1  ← 自动缩放策略
+├── Panels/                   4  ← 图表面板（标题/图例/ColorBar）
+├── Grids/                    1  ← 网格线
+├── Markers/                 26  ← 26 种标记形状
+├── ArrowShapes/              7  ← 箭头形状
+├── Colormaps/               35  ← 科学配色方案
+├── Palettes/                26  ← 分类调色板
+├── PathStrategies/           4  ← 连线策略（直线/样条/阶梯）
+├── Statistics/               6  ← 统计计算
+├── Finance/                  2  ← 金融指标
+├── Hatches/                  5  ← 图案填充
+├── DataGenerators/           3  ← 实时数据生成
+├── DataViews/                3  ← 数据流视图
+├── FontResolvers/            2  ← 字体解析
+├── Collections/              1  ← CircularBuffer
+├── CompilerServices/         2  ← 编译时工具
+├── MultiplotLayouts/         2  ← 多图布局
+├── LegendLayouts/            1  ← 图例排版
+├── IO/                       1  ← I/O 辅助
+└── LegendLayouts/            1  ← 图例排版
 ```
 
 ---
 
-## 四、核心目录逐个说明
+## 三、核心目录逐个详解
 
-### 4.1 `Primitives/` — Layer 2: 原子数据结构
+### 3.1 `Primitives/` — 原子数据结构 (109 files)
 
-> 详细参考：[learning/02-primitives/primitives-architecture.md](../../learning/02-primitives/primitives-architecture.md)
+> 详细参考：`learning/02-primitives/primitives-architecture.md`
 
-```
-Primitives/ (109 files)
-├── 坐标与几何 (15)
-│   Coordinates, Pixel, CoordinateRect, PixelRect, CoordinateLine, PixelLine,
-│   CoordinateRange, CoordinatePath, PixelPath, CoordinateOffset, Angle, ...
-├── 样式系统 (18)
-│   LineStyle, FillStyle, MarkerStyle, FontStyle, BackgroundStyle, GridStyle,
-│   LabelStyle, TickMarkStyle, ArrowStyle, Gradient, Colormap, ...
-├── 颜色系统 (70+)
-│   Color, Colors (静态工厂，数千种命名颜色)
-├── 轴与范围 (12)
-│   Axes, AxisLimits, ExpandingAxisLimits, AxisLimits3d, ...
-├── 图例 (4)
-│   Legend, LegendItem, LegendLayout
-├── 布局 (6)
-│   Layout, PixelPadding, FractionRect, Alignment, ...
-├── 数据承载 (6)
-│   Bar, OHLC, PieSlice, Box, Population, Range, ...
-└── 交互 (3)
-│   ContextMenuItem, Cursor, InteractiveHandle
-```
-
-**使用指引**：做任何样式/坐标相关开发，先找 `Primitives/` 中的对应类型，它们是所有上层代码的共享基础。
-
-### 4.2 `Interfaces/` — Layer 2: 核心接口定义
-
-> 关键接口一览
+所有上层组件的共享基础，分为以下子类别：
 
 ```
-Interfaces/ (60+ files)
-├── IPlottable.cs          ← 所有 Plottable 必须实现
-├── IRenderAction.cs       ← 渲染管道步骤
-├── IRenderLast.cs         ← 最后渲染（覆盖层）
-├── IPlottableGL.cs        ← OpenGL Plottable
-├── IScatterSource.cs      ← 离散数据源
-├── ISignalSource.cs       ← 信号数据源
-├── ISignalXYSource.cs     ← XY 信号源
-├── IOHLCSource.cs         ← K线数据源
-├── IVectorFieldSource.cs  ← 向量场数据源
-├── IAxes.cs / IAxis.cs    ← 轴接口
-├── IGrid.cs               ← 网格接口
-├── IPanel.cs              ← 面板接口
-├── IPlotControl.cs        ← 跨平台控件统一接口
-├── IPlotMenu.cs           ← 右键菜单接口
-├── IMultiplot.cs          ← 多图接口
-├── IHasLine / IHasMarker / IHasFill / ... ← 样式 Mixin
-├── IColormap.cs           ← 颜色映射
-├── IPalette.cs            ← 调色板
-├── IHatch.cs              ← 图案填充
-├── IArrowShape.cs         ← 箭头形状
-└── ... (ITickGenerator, IAxisRule, ILayoutEngine, IFontResolver, ...)
+Primitives/
+├── 坐标与几何 (15)   Coordinates, Pixel, CoordinateRect, PixelRect,
+│                     CoordinateLine, PixelLine, CoordinateRange, Angle, ...
+├── 样式系统 (18)     LineStyle, FillStyle, MarkerStyle, FontStyle,
+│                     BackgroundStyle, GridStyle, LabelStyle, TickMarkStyle,
+│                     ArrowStyle, Gradient, ConnectStyle, ...
+├── 颜色系统 (2+70)   Color, Colors（静态工厂，数千命名颜色）
+├── 轴与范围 (12)     Axes, AxisLimits, ExpandingAxisLimits, AxisLimits3d, ...
+├── 图例 (4)          Legend, LegendItem, LegendLayout
+├── 布局 (6)          Layout, PixelPadding, FractionRect, Alignment, ...
+├── 数据承载 (6)      Bar, OHLC, PieSlice, Box, Population, Range
+├── 交互 (3)          ContextMenuItem, Cursor, InteractiveHandle
+└── 其他 (20+)        Platform, RenderDetails, SvgImage, CanvasState, ...
 ```
 
-**使用指引**：理解系统的可扩展点——每个接口代表一个"策略模式"插入点，实现对应接口即可替换默认行为。
+| 关键类型 | 作用 |
+|---------|------|
+| `Coordinates` | 数据空间中的点（double X, double Y） |
+| `Pixel` | 屏幕空间中的点（float X, float Y） |
+| `CoordinateRect` | 数据空间矩形 → `ExpandingAxisLimits.Expand()` |
+| `PixelRect` | 屏幕空间矩形 → `Contains()` 剪裁判断 |
+| `Axes` | 坐标转换枢纽：`GetPixel(coord)` / `GetCoordinate(pixel)` |
+| `Color` | `readonly struct`，`WithAlpha()` 返回新值 |
+| `LineStyle` | 线型+颜色+宽度+图案+抗锯齿 |
+| `FillStyle` | 填充色+图案填充+抗锯齿 |
+| `AxisLimits` / `ExpandingAxisLimits` | 范围计算，后者只增不减 |
 
-### 4.3 `DataSources/` — Layer 3: 数据源实现
+### 3.2 `Interfaces/` — 核心接口 (~60 files)
 
-> 详细参考：[learning/03-datasources/datasources-architecture.md](../../learning/03-datasources/datasources-architecture.md)
+系统的可扩展点——每个接口代表一个策略模式插入位置：
 
 ```
-DataSources/ (28 files)
+Interfaces/
+├── IPlottable.cs              ← 所有图表的统一契约
+├── IRenderAction.cs           ← 渲染管道步骤
+├── IRenderLast.cs             ← 覆盖层渲染（标注/Tooltip）
+├── IPlottableGL.cs            ← OpenGL 加速 Plottable
+├── IScatterSource.cs          ← 离散 XY 数据源
+├── ISignalSource.cs           ← 等间距信号源
+├── ISignalXYSource.cs         ← XY 信号源
+├── IOHLCSource.cs             ← K 线数据源
+├── IVectorFieldSource.cs      ← 向量场数据源
+├── IAxes.cs / IAxis.cs        ← 轴接口
+├── IGrid.cs                   ← 网格接口
+├── IPanel.cs                  ← 面板接口
+├── IPlotControl.cs            ← 跨平台控件统一接口
+├── IPlotMenu.cs               ← 右键菜单接口
+├── IMultiplot.cs              ← 多图接口
+├── IHasLine/IHasMarker/IHasFill/...  ← 样式 Mixin 接口
+├── IColormap.cs / IPalette.cs ← 颜色映射/调色板
+├── IHatch.cs                  ← 图案填充
+├── IArrowShape.cs             ← 箭头形状
+├── IPathStrategy.cs           ← 连线策略
+├── ITickGenerator.cs          ← 刻度生成器
+├── IAxisRule.cs               ← 轴约束规则
+├── ILayoutEngine.cs           ← 布局引擎
+├── IFontResolver.cs           ← 字体解析器
+└── ...
+```
+
+### 3.3 `DataSources/` — 数据源 (28 files)
+
+> 详细参考：`learning/03-datasources/datasources-architecture.md`
+
+```
+DataSources/
 ├── IScatterSource 实现 (7)
 │   ScatterSourceDoubleArray, ScatterSourceCoordinatesArray,
-│   ScatterSourceGenericArray, ScatterSourceGenericList, ...
+│   ScatterSourceGenericArray/List, ScatterSourceWithCachedLimits, ...
 ├── ISignalSource 实现 (9)
-│   SignalSourceDouble, SignalSourceGenericArray, SignalSourceBase,
+│   SignalSourceDouble, SignalSourceGenericArray/List,
 │   SignalConstSource, FastSignalSourceDouble, SignalInterpolation, ...
 ├── ISignalXYSource 实现 (3)
-│   SignalXYSourceDoubleArray, SignalXYSourceGenericArray, ...
+│   SignalXYSourceDoubleArray, SignalXYSourceGenericArray/List
 ├── IOHLCSource 实现 (3)
-│   OHLCSourceArray, OHLCSourceList, OHLCSourceBase
+│   OHLCSourceArray/List, OHLCSourceBase
 ├── 实时数据 (2)
 │   DataLoggerSource, DataStreamerSource
 ├── 优化引擎 (3)
-│   SegmentedTree, MinMaxCache, ScatterSourceWithCachedLimits
-├── 其他 (4)
-│   FunctionSource, CoordinateDataSource, VectorFieldDataSourceCoordinatesList, ...
+│   SegmentedTree ← O(log n) 区间 MinMax 查询，大数据降采样核心
+│   MinMaxCache   ← 缓存区间查询结果
+│   ScatterSourceWithCachedLimits ← 缓存 Limits 的装饰器
+└── 其他 (3)
+    FunctionSource, CoordinateDataSource, VectorFieldDataSourceCoordinatesList
 ```
 
-**使用指引**：想理解大数据降采样 → `SignalSourceDouble` + `SegmentedTree`；想理解实时数据 → `DataLoggerSource`。
+| 关键区别 | ScatterSource | SignalSource |
+|---------|--------------|--------------|
+| X 值 | 任意离散 | 等间距（sampleRate） |
+| 大数据性能 | 全量渲染 | SegmentedTree 降采样 |
+| 实时追加 | 不支持 | DataLoggerSource |
 
-### 4.4 `Plottables/` — Layer 4: 可绘制物
+### 3.4 `Plottables/` — 可绘制物 (61 + 11 交互元素)
 
-> 详细参考：[learning/04-plottables/plottables-architecture.md](../../learning/04-plottables/plottables-architecture.md)
-
-```
-Plottables/ (61 files)
-├── 散点/信号 (6)  → Scatter, Signal, SignalXY, SignalConst, LinePlot, Markers
-├── 柱状/条形 (3)  → BarPlot, LollipopPlot, Bracket
-├── 金融图表 (3)  → CandlestickPlot, OHLCPlot, FinancialTimeAxis
-├── 热力/等值 (4)  → Heatmap, IsoLines, ContourLines, TINPlot
-├── 饼图/径向 (3)  → Pie, Coxcomb, RadialGaugePlot
-├── 极坐标/雷达 (4) → PolarAxis, Radar, SmithChartAxis, Phasor
-├── 统计图表 (3)  → BoxPlot, PopulationSymbol, HistogramBars
-├── 直线/跨度 (7)  → VerticalLine, HorizontalLine, VerticalSpan, HorizontalSpan,
-│                    AxisLine, AxisSpan, FloatingAxis
-├── 形状图形 (5)  → Rectangle, Ellipse, Polygon, ImageRect, ImageMarker
-├── 标注/文字 (3)  → Text, Annotation, Callout
-├── 实时数据 (3)  → DataLogger, DataStreamer, DataStreamerXY
-├── 箭头/矢量 (3)  → Arrow, VectorField, ErrorBar
-├── 工具/辅助 (4)  → Benchmark, ZoomRectangle, ScaleBar, TickModifierLabel
-├── 混合 (3)       → FillY, Crosshair, Tooltip
-└── 装饰器 (2)     → DraggablePlottableDecorator, HittablePlottableDecorator
-```
-
-**使用指引**：每个 Plottable 文件遵循统一模式（`IPlottable` + `IHas*` Mixin + `IScatterSource`）；添加新图表类型 → 复制 `Scatter.cs` 改 `Render()` 即可。
-
-### 4.5 `Rendering/` — Layer 5: 渲染管道
+> 详细参考：`learning/04-plottables/plottables-architecture.md`
 
 ```
-Rendering/ (1 file)
-└── RenderManager.cs    ← 25 步 RenderAction 管道调度器
+Plottables/
+├── 散点/信号 (6)   Scatter, Signal, SignalXY, SignalConst, LinePlot, Markers
+├── 柱状/条形 (3)   BarPlot, LollipopPlot, Bracket
+├── 金融图表 (3)    CandlestickPlot, OHLCPlot, FinancialTimeAxis
+├── 热力/等值 (4)   Heatmap, IsoLines, ContourLines, TINPlot
+├── 饼图/径向 (4)   Pie, PieBase, Coxcomb, RadialGaugePlot
+├── 极坐标/雷达 (4) PolarAxis, Radar, SmithChartAxis, Phasor
+├── 统计图表 (3)    BoxPlot, HistogramBars, PopulationSymbol
+├── 直线/跨度 (7)   VerticalLine, HorizontalLine, VerticalSpan,
+│                    HorizontalSpan, AxisLine, AxisSpan, FloatingAxis
+├── 形状图形 (5)    Rectangle, Ellipse, Polygon, ImageRect, ImageMarker
+├── 标注/文字 (3)   Text, Annotation, Callout
+├── 实时数据 (3)    DataLogger, DataStreamer, DataStreamerXY
+├── 箭头/矢量 (3)   Arrow, VectorField, ErrorBar
+├── 工具/辅助 (5)   Benchmark, ZoomRectangle, ScaleBar, TickModifierLabel,
+│                    RadialGauge, Tooltip, Crosshair, FillY
+├── 装饰器 (2)      DraggablePlottableDecorator, HittablePlottableDecorator
+│
+└── Interactive/ (11)  ← 可拖拽交互元素
+    InteractiveVerticalLine, InteractiveHorizontalLine,
+    InteractiveVerticalSpan, InteractiveHorizontalSpan,
+    InteractiveRectangle, InteractiveMarker,
+    InteractiveLineSegment, InteractiveTrendLine, ...
+    └── SubplotPreRenderActions/
+        SharedVerticalLine    ← 跨子图共享交互线
 ```
 
-> 详细参考：[learning/05-rendering/rendering-architecture.md](../../learning/05-rendering/rendering-architecture.md)
+每个 Plottable 都继承统一代码模板：
 
-RenderManager 是整个引擎唯一入口，它初始化 25 个 `IRenderAction` 并依次执行。渲染中产生的临时状态存在 `RenderPack` 中。每个步骤前后 `CanvasState.Save()/RestoreAll()` 保证隔离。
+```
+class XxxPlot : IPlottable, IHasLine, IHasMarker, IHasLegendText, ...
+{
+    bool IsVisible { get; set; }      // 可见性
+    IAxes Axes { get; set; }          // 坐标系引用
+    AxisLimits GetAxisLimits()        // 告诉 Plot 数据范围
+    void Render(RenderPack rp)         // 画自己
+    IEnumerable<LegendItem> LegendItems // 图例项
+}
+```
 
-### 4.6 `Interactivity/` — Layer 6: 交互系统
+### 3.5 `Rendering/` — 渲染管道
 
-> 详细参考：[learning/06-interactivity/interactivity-controls-architecture.md](../../learning/06-interactivity/interactivity-controls-architecture.md)
+> 详细参考：`learning/05-rendering/rendering-architecture.md`
+
+```
+Rendering/
+├── RenderManager.cs             ← 25 步管道调度器：初始化 → foreach 依次执行
+└── RenderActions/ (25 files)    ← 每步独立文件，实现 IRenderAction
+    ├── 01_PreRenderLock.cs              ← 获取渲染锁（防止并发渲染）
+    ├── 02_ClearCanvas.cs                ← 清空画布
+    ├── 03_ReplaceNullAxesWithDefaults   ← 未设轴的 Plottable → 默认轴
+    ├── 04_AutoScaleUnsetAxes            ← 自动缩放未手动设定的轴
+    ├── 05_ContinuouslyAutoscale         ← 持续自动缩放（DataStreamer）
+    ├── 06_ExecutePlottableAxisManagers  ← 执行 Plottable 的轴管理器
+    ├── 07_ApplyAxisRulesBeforeLayout    ← 应用布局前轴约束
+    ├── 08_CalculateLayout               ← 计算布局：DataRect + PanelRects
+    ├── 09_RenderFigureBackground        ← 绘制图表背景
+    ├── 10_ApplyAxisRulesAfterLayout     ← 应用布局后轴约束
+    ├── 11_RegenerateTicks               ← 根据 DataRect.Width 重新生成刻度
+    ├── 12_RenderStartingEvent           ← 触发 RenderStarting 事件
+    ├── 13_RenderDataBackground          ← 绘制数据区背景
+    ├── 14_StoreGLState                  ← 备份 OpenGL 状态
+    ├── 15_RenderGridsBelowPlottables    ← 绘制 Plottable 下层网格
+    ├── 16_RestoreGLState                ← 恢复 OpenGL 状态
+    ├── 17_RenderPlottables              ← 绘制所有 Plottable
+    ├── 18_RenderGridsAbovePlottables    ← 绘制 Plottable 上层网格
+    ├── 19_RenderLegends                 ← 绘制图例
+    ├── 20_RenderPanels                  ← 绘制面板（标题、ColorBar）
+    ├── 21_RenderBorders                 ← 绘制边框
+    ├── 22_RenderZoomRectangle           ← 绘制缩放矩形
+    ├── 23_SyncGLPlottables              ← 同步 OpenGL Plottable
+    ├── 24_RenderPlottablesLast          ← 绘制覆盖层（IRenderLast）
+    └── 25_RenderBenchmark               ← 绘制性能面板
+```
+
+关键原则：每个步骤前后 `rp.CanvasState.Save()` / `RestoreAll()` 保证隔离。
+
+### 3.6 `Interactivity/` — 交互系统 (~25 files)
+
+> 详细参考：`learning/06-interactivity/interactivity-controls-architecture.md`
 
 ```
 Interactivity/
 ├── UserInputProcessor.cs          ← 统一事件入口
-├── IUserAction.cs                 ← 平台无关的事件抽象
-├── IUserActionResponse.cs         ← 响应器接口（责任链模式）
-├── ResponseInfo.cs                ← 响应状态（IsPrimary 独占机制）
+├── IUserAction.cs                 ← 平台无关事件抽象
+├── IUserActionResponse.cs         ← 响应器接口（责任链）
+├── ResponseInfo.cs                ← 响应状态（IsPrimary 独占标志）
 ├── KeyboardState.cs               ← 键盘状态机
 ├── Key.cs / MouseButton.cs        ← 按键枚举
-├── UserActions/ (12 files)        ← 12 种原始事件类型
+├── MouseAxisManipulation.cs       ← 鼠标轴操作辅助
+├── StandardKeys.cs                ← 标准键定义
+├── StandardMouseButtons.cs        ← 标准鼠标键定义
+│
+├── UserActions/ (12 files)        ← 12 种原始事件
 │   MouseMove, LeftMouseDown/Up, MiddleMouseDown/Up,
-│   RightMouseDown/Up, MouseWheelDown/Up, KeyDown/Up
-└── UserActionResponses/ (13 files)← 12 种响应器
+│   RightMouseDown/Up, MouseWheelDown/Up, KeyDown/Up, Unknown
+│
+└── UserActionResponses/ (13 files) ← 12 种响应器
     MouseDragPan, MouseDragZoom, MouseDragZoomRectangle,
     MouseWheelZoom, MouseInteractWithPlottables,
     SingleClickAutoscale, SingleClickContextMenu,
-    DoubleClickBenchmark, KeyboardPanAndZoom, KeyboardAutoscale, ...
+    DoubleClickBenchmark, KeyboardPanAndZoom,
+    KeyboardAutoscale, DoubleClickResponse,
+    KeyPressResponse, SingleClickResponse
 ```
 
-**使用指引**：自定义交互 → 实现 `IUserActionResponse` → `UserInputProcessor.UserActionResponses.Insert(index, ...)`。
+责任链机制：`UserInputProcessor` 按 `UserActionResponses[]` 顺序依次尝试匹配，第一个匹配成功后设置 `IsPrimary = true` 独占后续事件。
 
-### 4.7 `TickGenerators/` — 刻度生成
+### 3.7 其余辅助目录
+
+#### 轴系统
 
 ```
-TickGenerators/ (15 files)
-├── NumericAutomatic       ← 自动数值刻度（最常用）
-├── NumericFixedInterval   ← 固定间隔数值刻度
-├── NumericManual          ← 手动指定刻度
-├── DateTimeAutomatic      ← 自动日期刻度
-├── DateTimeFixedInterval  ← 固定间隔日期刻度
-├── DateTimeManual         ← 手动指定日期刻度
-├── FinancialTickGenerator ← 金融图表专用（跳过非交易日）
-├── DecimalTickSpacingCalculator ← 十进制间隔计算
-├── LabelFormatters        ← 刻度标签格式化
-├── LogMinorTickGenerator  ← 对数刻度次刻度
-├── EvenlySpacedMinorTickGenerator ← 均匀次刻度
-├── EmptyTickGenerator     ← 空刻度（隐藏刻度）
-└── ITimeUnit / IDateTimeTickGenerator / ITickGenerator
+TickGenerators/ (15)
+├── NumericAutomatic/Manual/FixedInterval, DecimalTickSpacingCalculator
+├── DateTimeAutomatic/Manual/FixedInterval, FinancialTickGenerator
+├── LogMinorTickGenerator, EvenlySpacedMinorTickGenerator, EmptyTickGenerator
+└── LabelFormatters, IDateTimeTickGenerator, ITimeUnit
+
+AxisPanels/ (12)
+├── AxisBase → BottomAxis, LeftAxis, RightAxis, TopAxis
+├── DateTimeXAxis, XAxisBase, YAxisBase
+├── MirroredXAxis, MirroredYAxis
+└── Experimental/LeftAxisWithSubtitle
+
+AxisRules/ (16)
+├── LockedLeft/Right/Top/Bottom/CenterX/CenterY/Horizontal/Vertical
+├── MaximumBoundary/Span, MinimumBoundary/Span
+└── SnapToTicksX/Y, SquarePreserveX/Y, SquareZoomOut
+
+AxisLimitManagers/ (3)
+├── Full.cs ← 经典模式（显示全部数据）
+├── Slide.cs ← 滑动窗口（实时数据用）
+└── FixedWidth.cs ← 固定宽度窗口
+
+AutoScalers/ (1)
+└── FractionalAutoScaler
 ```
 
-### 4.8 其他重要目录
+#### 布局与面板
 
-| 目录 | 文件数 | 一句话 |
-|------|--------|--------|
-| `LayoutEngines/` | 5 | 数据区域计算：`Automatic`、`FixedDataArea`、`FixedPadding`、`MatchedDataRect` |
-| `AxisPanels/` | 12 | 轴渲染：`BottomAxis`、`LeftAxis`、`DateTimeXAxis`、`MirroredXAxis` 等 |
-| `AxisRules/` | 16 | 轴约束：`LockedLeft`、`SquarePreserveX`、`MinimumSpan` 等 |
-| `AxisLimitManagers/` | 3 | 动态轴范围：`Full`（经典）、`Slide`（实时滚动）、`FixedWidth` |
-| `AutoScalers/` | 1 | 自适应缩放：`FractionalAutoScaler` |
-| `Panels/` | 4 | `TitlePanel`、`LegendPanel`、`ColorBar`、`PanelBase` |
-| `Markers/` | 26 | 26 种标记形状的 SkiaSharp 绘制实现 |
-| `Colormaps/` | 35 | 35 种科学配色方案（Viridis、Jet、Heat 等） |
-| `Statistics/` | 6 | `Histogram`、`LinearRegression`、`KernelDensity`、`Descriptive` 等 |
-| `Finance/` | 2 | `BollingerBands`、`SimpleMovingAverage` |
+```
+LayoutEngines/ (5)
+├── Automatic, FixedDataArea, FixedPadding, MatchedDataRect, LayoutEngineBase
+
+Panels/ (4)
+├── TitlePanel, LegendPanel, ColorBar, PanelBase
+
+Grids/ (1)
+└── DefaultGrid
+
+LegendLayouts/ (1)
+└── Wrapping
+```
+
+#### Markers — 26 种标记形状
+
+```
+Markers/
+├── 填充风格：FilledCircle, FilledSquare, FilledDiamond,
+│              FilledTriangleUp/Down, TriUp, TriDown
+├── 开放风格：OpenCircle, OpenSquare, OpenDiamond,
+│              OpenTriangleUp/Down, OpenCircleWithCross/Dot/Eks
+├── 特殊形状：Asterisk, Cross, Eks, HashTag, HorizonalBar, VerticalBar,
+│              CircleWithLineLeft/Right, TriangleWithLineLeft/Right, None
+```
+
+#### Colormaps — 35 种科学配色
+
+```
+Colormaps/
+├── 经典：Jet, Turbo, Viridis, Plasma, Inferno, Magma, Grayscale
+├── 海洋：Haline, Deep, Ice, Solar, Rain, Delta, Algae, Amp, Tempo, Thermal
+├── 陆地：Topo, Turbid, Matter, Speed, Dense
+├── 风格：MellowRainbow, Oxy, Phase
+├── 适配：Custom, CustomInterpolated, CustomPalette, Inverted, Reversed, InvertedHue
+└── 其他：Balance, Blues, Curl, Diff, Greens, Tarn
+```
+
+#### Palettes — 26 种分类调色板
+
+```
+Palettes/
+├── 经典：Normal, Dark, LightSpectrum, LightOcean, Frost
+├── 易用：Category10, Category20, ColorblindFriendly, ColorblindFriendlyDark
+├── 主题：Nord, OneHalf, OneHalfDark, Nero, PolarNight, Penumbra, Aurora
+├── 风格：Microcharts, PastelWheel, Building, Amber, Redness
+└── 其他：Tsitsulin, SummerSplash, SnowStorm, DarkPastel, Custom
+```
+
+#### 统计与数学
+
+```
+Statistics/ (6)
+├── Histogram, Descriptive, LinearRegression,
+├── KernelDensity, ProbabilityDensity, Series
+
+Finance/ (2)
+├── BollingerBands, SimpleMovingAverage
+```
+
+#### 其他辅助
+
+```
+PathStrategies/ (4)       连线策略：Straight, QuadHalfPoint(阶梯), CubicSpline, Arrows
+ArrowShapes/ (7)          箭头形状：Arrowhead, Chevron, Pentagon, Double, Single, ...
+Hatches/ (5)              图案填充：Checker, Dots, Grid, Square, Striped
+DataGenerators/ (3)       实时数据生成：FinancialDataGenerator, RandomWalker, RandomWalker2D
+DataViews/ (3)            数据流视图：Scroll, Wipe, IDataStreamerView
+FontResolvers/ (2)        字体解析：SystemFontResolver, FileFontResolver
+Collections/ (1)          CircularBuffer
+CompilerServices/ (2)     CompilerServices, Index
+MultiplotLayouts/ (2)     Columns, CustomGrid
+IO/ (1)                   BitmapHeader
+```
 
 ---
 
-## 五、控件项目 `ScottPlot5 Controls/`
+## 四、控件项目 `ScottPlot5 Controls/`
 
-> 详细参考：[learning/07-controls/controls-architecture.md](../../learning/07-controls/controls-architecture.md)
+> 详细参考：`learning/07-controls/controls-architecture.md`
 
 ```
 ScottPlot5 Controls/
-├── ScottPlot.WinForms/        ← NuGet: ScottPlot.WinForms
-│   FormsPlot.cs, FormsPlotMenu.cs, FormsPlotGL.cs, FormsPlotViewer.cs
-├── ScottPlot.WPF/             ← NuGet: ScottPlot.WPF
-│   WpfPlot.cs, WpfPlotMenu.cs, WpfPlotGL.cs, WpfPlotViewer.cs
-├── ScottPlot.Avalonia/        ← NuGet: ScottPlot.Avalonia
-│   AvaPlot.cs, AvaPlotMenu.cs
-├── ScottPlot.Blazor/          ← NuGet: ScottPlot.Blazor
-│   BlazorPlot.razor, BlazorPlotGL.razor, BlazorPlotMenu.cs
-├── ScottPlot.Eto/             ← NuGet: ScottPlot.Eto
-│   EtoPlot.cs, EtoPlotMenu.cs
-├── ScottPlot.Maui/            ← NuGet: ScottPlot.Maui
-│   MauiPlot.cs, MauiPlotMenu.cs, Platforms/{Android,iOS,...}
-├── ScottPlot.WinUI/           ← NuGet: ScottPlot.WinUI
-│   WinUIPlot.cs, WinUIPlotMenu.cs
-├── ScottPlot.OpenGL/          ← NuGet: ScottPlot.OpenGL
-│   ScatterGL.cs, ScatterGLCustom.cs, GLPrograms/
-└── ScottPlot.GLControl/       ← （在核心库项目中，非独立 NuGet）
+├── ScottPlot.WinForms/     NuGet: ScottPlot.WinForms
+│   FormsPlot, FormsPlotGL, FormsPlotMenu, FormsPlotViewer, ...
+├── ScottPlot.WPF/          NuGet: ScottPlot.WPF
+│   WpfPlot, WpfPlotGL, WpfPlotMenu, WpfPlotViewer, ...
+├── ScottPlot.Avalonia/     NuGet: ScottPlot.Avalonia
+│   AvaPlot, AvaPlotMenu, ...
+├── ScottPlot.Blazor/       NuGet: ScottPlot.Blazor
+│   BlazorPlot.razor, BlazorPlotGL.razor, BlazorPlotMenu, ...
+├── ScottPlot.Eto/          NuGet: ScottPlot.Eto
+│   EtoPlot, EtoPlotMenu, ...
+├── ScottPlot.Maui/         NuGet: ScottPlot.Maui
+│   MauiPlot, MauiPlotMenu, Platforms/{Android,iOS,MacCatalyst,Tizen,Windows}
+├── ScottPlot.WinUI/        NuGet: ScottPlot.WinUI
+│   WinUIPlot, WinUIPlotMenu, ...
+├── ScottPlot.OpenGL/       NuGet: ScottPlot.OpenGL
+│   ScatterGL, ScatterGLCustom, GLPrograms/ (12 个 Shader 文件)
+└── ScottPlot.GLControl     （在核心库中，非独立 NuGet）
 ```
 
-**通用模式**（每个控件 ~80 行）：
+**统一模式**（每个控件 ~80 行核心代码）：
 
 ```
-平台事件 → UserInputProcessor.Process() → Plot 状态变化 → Refresh() → RenderManager.Render(canvas, rect)
+平台事件 → UserInputProcessor.Process(action)
+    → Plot 状态修改
+    → Refresh()
+    → RenderManager.Render(canvas, rect)
 ```
 
 ---
 
-## 六、测试与工具项目
+## 五、测试与工具项目
 
-### 6.1 测试项目
+### 5.1 测试
 
 ```
 ScottPlot5 Tests/
-├── Unit Tests/                               ← 核心单元测试
-│   ├── UnitTests/PrimitiveTests/             ← Primitives 层测试
-│   ├── UnitTests/TickGenerators/             ← 刻度生成器测试
-│   ├── RenderTests/Figure/                   ← 整图对比测试
-│   ├── RenderTests/Plottable/                ← Plottable 渲染测试
-│   ├── InteractivityTests/                   ← 交互系统测试
-│   ├── CodeTests/                            ← 代码规范测试
-│   ├── FontTests/                            ← 字体测试
-│   └── Statistics/                           ← 统计测试
-└── Graphical Test Runner/                    ← WinForms 可视化测试运行器
+│
+├── Unit Tests/
+│   ├── UnitTests/PrimitiveTests/         ← 原子类型测试
+│   ├── UnitTests/TickGenerators/         ← 刻度生成器测试
+│   ├── RenderTests/
+│   │   ├── Figure/                       ← 整图对比测试
+│   │   ├── Plottable/                    ← 各 Plottable 渲染测试
+│   │   ├── AutoScale/Layout/Legend/...   ← 子系统测试
+│   ├── InteractivityTests/
+│   │   ├── UserInputActionTests/         ← 8 种响应器独立测试
+│   │   └── KeyboardStateTests
+│   ├── CodeTests/                        ← 代码规范检查
+│   ├── FontTests/                        ← 字体检测/测量
+│   ├── Statistics/                       ← 统计算法测试
+│   └── TestImages/                       ← 测试用图片资源
+│
+└── Graphical Test Runner/                ← WinForms 可视化结果对比
 ```
 
-### 6.2 其他工具项目
+### 5.2 其他工具项目
 
 | 项目 | 用途 |
 |------|------|
-| `ScottPlot5 Cookbook/` | 自动扫描 Plottable → 生成 HTML 示例页 → 输出到 scottplot.net |
-| `ScottPlot5 Demos/` | 3 套演示程序（Avalonia、WinForms、WPF、Blazor） |
-| `ScottPlot5 Benchmarks/` | BenchmarkDotNet 性能测试 |
+| `ScottPlot5 Cookbook/` | 扫描 Plottable → 生成 500+ 带截图示例 → 输出网站 |
+| `ScottPlot5 Demos/` | 4 套演示程序 |
+| `ScottPlot5 Benchmarks/` | BenchmarkDotNet 性能基准测试 |
+
+#### Demo 程序明细
+
+```
+ScottPlot5 Demos/
+├── Avalonia Demo/            ← Avalonia 演示（MVVM 架构）
+│   ├── Demos/                ← 40+ 个独立 Demo 窗口
+│   ├── ViewModels/           ← MVVM ViewModel 层
+│   └── Views/                ← MVVM View 层
+├── ScottPlot5 WinForms Demo/ ← WinForms 演示
+│   └── Demos/                ← 多套 .Designer/.resx 演示窗体
+├── ScottPlot5 WPF Demo/      ← WPF 演示
+│   └── DemoWindows/          ← DisplayScaling, MultiThreading, Quickstart
+└── ScottPlot5 Blazor/        ← Blazor WebAssembly 演示
+    ├── Pages/                ← Quickstart, Recipe, Signal
+    ├── Services/             ← IRecipesService, IResizeService
+    └── wwwroot/              ← 静态资源（Bootstrap, highlight.js, OpenIconic）
+```
 
 ---
 
-## 七、常用导航速查
+## 六、导航速查
 
 ### "我想找..."
 
-| 问题 | 去这里 |
-|------|--------|
-| 某个 API 怎么实现的？ | `Plot.cs` → 跟踪方法调用 |
-| 如何在渲染管道中插入步骤？ | `Rendering/RenderManager.cs` |
-| 如何添加新的图表类型？ | 复制 `Plottables/Scatter.cs` 参考 |
-| 如何添加新的坐标轴类型？ | `AxisPanels/` + `Interfaces/IAxis.cs` |
-| 如何自定义交互？ | `Interactivity/UserActionResponses/` |
-| 数据是怎么降采样的？ | `DataSources/SignalSourceDouble.cs` → `SegmentedTree.cs` |
-| 颜色系统有哪些能力？ | `Primitives/Color.cs` + `Primitives/Colors.cs` |
+| 问题 | 路径 |
+|------|------|
+| `Plot.Add.Scatter()` 怎么实现的？ | `PlottableAdder.cs` |
+| 渲染管道怎么插入步骤？ | `Rendering/RenderManager.cs` → `RenderActions[]` |
+| 如何新增图表类型？ | 复制 `Plottables/Scatter.cs` 参考 |
+| 如何新增坐标轴？ | `AxisPanels/AxisBase.cs` + `Interfaces/IAxis.cs` |
+| 如何自定义交互？ | `Interactivity/` → 实现 `IUserActionResponse` |
+| 大数据如何降采样？ | `DataSources/SignalSourceDouble.cs` → `SegmentedTree.cs` |
+| 颜色系统有哪些能力？ | `Primitives/Color.cs` + `Colors.cs` |
 | 字体怎么管理的？ | `Fonts.cs` + `FontResolvers/` |
 | 刻度怎么计算的？ | `TickGenerators/NumericAutomatic.cs` |
+| 柱状图怎么画的？ | `Plottables/BarPlot.cs` |
+| 实时数据怎么处理？ | `Plottables/DataLogger.cs` + `DataSources/DataLoggerSource.cs` |
 
 ### "我想改..."
 
-| 问题 | 去这里 |
-|------|--------|
-| 默认颜色/样式 | `Plot.cs` 构造函数 → `Plot.ApplyDefaultStyle()` |
-| 默认交互行为 | `UserInputProcessor.cs` 构造函数 |
+| 问题 | 路径 |
+|------|------|
+| 默认颜色/样式 | `Plot.cs` → `ApplyDefaultStyle()` |
+| 默认交互行为 | `Interactivity/UserInputProcessor.cs` |
 | 默认轴行为 | `AxisManager.cs` |
 | 默认布局 | `LayoutEngines/Automatic.cs` |
 | 默认刻度 | `TickGenerators/NumericAutomatic.cs` |
+| 默认字体 | `Fonts.cs` → `SetBestFont()` |
 
----
+### "我想了解..."
 
-## 八、交叉引用
-
-| 文档 | 适合场景 |
+| 问题 | 学习文档 |
 |------|---------|
-| [getting-started.md](getting-started.md) | 新手入门，API 使用 |
-| [build-guide.md](build-guide.md) | 编译、工作负载、跳过 Android |
-| [usage-caveats.md](usage-caveats.md) | 常见陷阱与注意事项 |
-| [01-architecture/](../../learning/01-architecture/) | 5 条数据链路全解析 |
-| [02-primitives/](../../learning/02-primitives/) | Coord/Pixel/Color 等原子层 |
-| [03-datasources/](../../learning/03-datasources/) | Scatter/Signal/SegmentedTree |
-| [04-plottables/](../../learning/04-plottables/) | 72 种图表类型详解 |
-| [05-rendering/](../../learning/05-rendering/) | 25 步渲染管道 |
-| [06-interactivity/](../../learning/06-interactivity/) | 交互系统责任链 |
-| [07-controls/](../../learning/07-controls/) | 8 个跨平台控件 |
+| 5 条核心数据链路 | `learning/01-architecture/data-chains.md` |
+| Primitives 层详解 | `learning/02-primitives/primitives-architecture.md` |
+| DataSources 层详解 | `learning/03-datasources/datasources-architecture.md` |
+| Plottables 层详解 | `learning/04-plottables/plottables-architecture.md` |
+| 渲染管道详解 | `learning/05-rendering/rendering-architecture.md` |
+| 交互系统详解 | `learning/06-interactivity/interactivity-controls-architecture.md` |
+| 跨平台控件详解 | `learning/07-controls/controls-architecture.md` |
+| 新手入门 | `learning/notes/getting-started.md` |
+| 编译指南 | `learning/notes/build-guide.md` |
+| 常见陷阱 | `learning/notes/usage-caveats.md` |
