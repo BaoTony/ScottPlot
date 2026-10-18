@@ -337,7 +337,7 @@ plot.ScaleFactorF = DisplayScale;
 ### 25. `SignalConst` 已过时
 
 ```csharp
-// 源码: SignalConstSource.cs — 继承 SignalSourceGenericArray<T> + SegmentedTree, 标记 [Obsolete]
+// 源码: SignalConst.cs 标记 [Obsolete]（DataSource: SignalConstSource.cs，继承 SignalSourceGenericArray<T> + SegmentedTree）
 ```
 
 - 它不是"常量值 O(1) 存储"的特殊数据源，就是 `Signal` + SegmentedTree 的封装
