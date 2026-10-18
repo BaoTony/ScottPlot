@@ -28,7 +28,7 @@ public bool HasBeenSet => NumericConversion.IsReal(Span) && Span != 0;
 plot.Axes.SetLimitsX(0, 100);   // HasBeenSet = true → 后续 AutoScale 不再覆盖
 ```
 
-- 一旦手动设置轴范围，AutoScale 就**永久失效**（除非调用 `Reset()` 或重新创建 Plot）
+- 一旦手动设置轴范围，AutoScale 就**永久失效**（除非调用 `Axes.AutoScale()` 或重新创建 Plot）
 - 调试时发现轴范围"锁死"了，90% 是这个标志位导致的
 
 ### 3. `RenderOnce` vs `Render` 的区别

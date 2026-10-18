@@ -239,7 +239,7 @@ public readonly struct Color
 ```csharp
 public static class Colors
 {
-    // 161 个预设颜色 (W3C CSS 颜色名，实测 Primitives/Colors.cs 静态属性数)
+    // 162 个预设颜色 (W3C CSS 颜色名，实测 Primitives/Colors.cs 静态属性数)
     static Color Red => new(255, 0, 0);
     static Color Blue => new(0, 0, 255);
     static Color Transparent => new(0, 0, 0, 0);
@@ -452,4 +452,4 @@ Render 时通过 is/as 模式检查接口：
 
 5. **样式属性转发**：`scatter.LineWidth = 3` 是语法糖，实际修改 `scatter.LineStyle.Width`，这样用户无需深入样式对象层次
 
-6. **LegendItem 是样式集大成者**：同时实现 6 个样式接口，是样式系统组合能力的完美展示
+6. **LegendItem 是样式集大成者**：同时实现 5 个样式接口（另继承 LabelStyleProperties），是样式系统组合能力的完美展示

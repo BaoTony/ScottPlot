@@ -162,7 +162,7 @@ myPlot.Grid.MajorLineColor = Colors.Gray.WithAlpha(0.3);
 ## 五、新手高频陷阱（5 条速览）
 
 1. **`Color.WithAlpha()` 必须接收返回值** — `Color` 是 readonly struct，`c = c.WithAlpha(128)` 才对。
-2. **手动 `SetLimits` 后 AutoScale 永久失效** — 需调用 `myPlot.Axes.Reset()` 恢复。
+2. **手动 `SetLimits` 后 AutoScale 永久失效** — 需调用 `myPlot.Axes.AutoScale()` 恢复。
 3. **修改数据后必须手动 `Refresh()`** — `Plot` 没有数据变更检测机制。
 4. **`PixelRect` 和 `CoordinateRect` 的 Y 轴方向相反** — 屏幕坐标 Y 向下，笛卡尔坐标 Y 向上。
 5. **`SignalConst` 已标记为过时** — 新代码直接用 `Signal`。

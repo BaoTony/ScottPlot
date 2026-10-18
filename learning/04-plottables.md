@@ -287,7 +287,7 @@ Render(rp):
 
 1. **IPlottable 是最小合约**：只需 `IsVisible` + `Axes` + `GetAxisLimits()` + `Render()` + `LegendItems` 五步即可自定义图表类型。
 
-2. **样式接口是可选插件**：`IHasLine`, `IHasMarker`, `IHasFill` 等是 mixin，Plottable 按需实现。RenderManager 通过 `is IHasLine line` 做运行时类型检测来应用通用样式。
+2. **样式接口是可选插件**：`IHasLine`, `IHasMarker`, `IHasFill` 等是 mixin，Plottable 按需实现。用户代码通过 `is IHasLine line` 做运行时能力检测（如 `if (plottable is IHasLine l) l.LineStyle = ...`），Plottable 内部通过属性转发（`scatter.LineWidth → scatter.LineStyle.Width`）统一对外暴露样式。
 
 3. **GUI 线程安全的分离**：Plottable 的 `Render()` 方法在渲染管道中被调用（第17步 `RenderPlottables`），此时所有数据处理在线程安全的上下文中完成。交互拖拽（`Interactive*` 系列）在 UI 线程中修改数据，然后触发 `Refresh()`。
 
