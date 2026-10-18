@@ -11,7 +11,7 @@
 口径：声明口径，仅 public（含嵌套 public 类型/成员）；
       protected/protected internal/internal 不计入对外 API。
 
-运行（需 Python 3.13 + tree-sitter 依赖，本机 3.15 无 wheel）：
+运行（需 Python 3.13+ 与 tree-sitter 依赖，无预编译 wheel 的版本不可用）：
       py -3.13 learning/scripts/scottplot5-api.py           # Markdown 输出到终端
       py -3.13 learning/scripts/scottplot5-api.py --json    # 纯 JSON 输出
       py -3.13 learning/scripts/scottplot5-api.py --out     # 一键落盘：md+json 保存到桌面
@@ -27,9 +27,7 @@ from collections import OrderedDict
 import tree_sitter_c_sharp
 from tree_sitter import Language, Parser
 
-# ============================================================
-# 路径常量：默认基于脚本自身位置推导仓库根目录（与 scottplot5-stats.py 同规则）
-# ============================================================
+# 路径常量：按脚本位置推导仓库根（与 scottplot5-stats.py 同规则）
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SLN = os.path.join(REPO, 'src', 'ScottPlot5')          # ScottPlot5 源码根目录
 CORE = os.path.join(SLN, 'ScottPlot5')                 # 核心库 ScottPlot5
@@ -62,8 +60,7 @@ MEMBER_KINDS = {
     'constructor_declaration': 'ctor',
     'delegate_declaration': 'delegate',
 }
-# 成员节点中"签名结束"的边界：遇到下列子节点即截断签名文本
-# （block=方法/构造函数体，declaration_list=类体，accessor_list=属性访问器等）
+# 成员节点中"签名结束"的边界子节点（方法体/类体/访问器列表/表达式体/初始化器）
 BODY_NODES = {'block', 'declaration_list', 'accessor_list', 'arrow_expression_clause',
               'equals_value_clause', 'variable_declarator', 'initializer'}
 
@@ -112,11 +109,7 @@ def signature_of(src, node):
 
 
 def doc_text_from_lines(lines):
-    """把紧邻声明上方的 /// 注释行解析为单行纯文本摘要。
-
-    优先取 <summary> 内文；无 summary 标签时取全部文档文本；
-    去掉内嵌 XML 标签（如 <param>、<returns>）并压缩空白。
-    """
+    """把 /// 注释行解析为单行摘要：优先 <summary> 内文，去 XML 标签并压缩空白"""
     if not lines:
         return ''
     text = '\n'.join(lines)
@@ -127,11 +120,8 @@ def doc_text_from_lines(lines):
 
 
 def accessors_of(src, prop_node):
-    """从属性节点的 accessor_list 中提取访问器名（get/set/init）。
-
-    语法中访问器节点是通用的 accessor_declaration，
-    具体的 get/set/init 关键字位于其子节点。
-    """
+    """从属性节点的 accessor_list 中提取访问器名（get/set/init 关键字位于
+    accessor_declaration 的子节点，语法树无独立字段，需逐子节点查找）"""
     accs = []
     for c in prop_node.children:
         if c.type != 'accessor_list':
@@ -168,21 +158,18 @@ def param_is_extension(src, method_node):
 
 
 def walk_type(src, node, ns, file_rel, parent_public, stats, doc=''):
-    """递归遍历一个类型声明节点，产出该类型及其嵌套类型的 API 记录。
+    """递归遍历类型声明节点，产出该类型及其嵌套类型的 API 记录。
 
-    parent_public 控制可见性传导：外层类型非 public 时，嵌套类型即使
-    声明为 public 也不属于对外 API（C# 可访问性规则）。
-    doc 为声明上方紧邻 /// 注释解析出的摘要文本。
+    parent_public 控制可见性传导（外层非 public 时嵌套 public 也不对外，
+    C# 可访问性规则）；doc 为声明上方紧邻 /// 注释摘要。
     """
     kind = TYPE_KINDS.get(node.type)
     if kind is None:
         return None
     pub = is_public(node) and parent_public
     name = node_text(src, node.child_by_field_name('name'))
-    # 类型签名：从声明起截到类型体/分号之前（record 主构造参数、基类列表、约束全含）
     type_sig = signature_of(src, node)
     if not pub:
-        # 非 public 类型：其内部即使有 public 声明也不对外可见，直接返回
         return None
     stats['types'] += 1
     if doc:
@@ -203,8 +190,7 @@ def walk_type(src, node, ns, file_rel, parent_public, stats, doc=''):
                     # 普通 // 或 /* */ 注释会打断 /// 文档块
                     pending = []
                 continue
-            # 到达声明节点：先把累积的 /// 注释解析为摘要，再清空 pending
-            doc_text = doc_text_from_lines(pending)
+            doc_text = doc_text_from_lines(pending)  # 解析累积的 /// 注释并清空
             pending = []
             m = collect_member(src, c, ns, name, stats, doc_text)
             if m is not None:
@@ -264,10 +250,8 @@ def parse_file(path, rel):
 
     stats = {'types': 0, 'members': 0, 'docs': 0, 'by_kind': {}}
     types = []
-    # 声明位置随命名空间形式而异（tree-sitter 语法的关键差异）：
-    # - 块级 namespace：类型在 namespace 的 body 内
-    # - 文件级 namespace / 无命名空间：类型是编译单元 root 的直接子节点
-    #   （file_scoped 节点本身无花括号主体，后续声明被解析为 root 子节点）
+    # 类型声明位置随命名空间形式而异：块级 namespace 的类型在其 body 内；
+    # 文件级/无命名空间时类型挂在编译单元根部（file_scoped 无花括号主体）
     if file_scoped or ns == '(global)':
         candidates = list(root.children)
     else:
@@ -318,9 +302,10 @@ def collect_all(core_dir):
     return namespaces, totals
 
 
-def build_markdown(namespaces, totals):
+def build_markdown(namespaces, totals, version):
     """把 API 清单渲染为人类可读的 Markdown 文档"""
     lines = ['# ScottPlot5 公共 API 签名清单', '',
+             f'> ScottPlot5 版本：**{version}**（提取自 ScottPlot.csproj，便于跨版本比对）',
              '> 由 `learning/scripts/scottplot5-api.py` 自动生成（声明口径，'
              '仅 public；protected/internal 不计入）。', '']
     # 摘要表：命名空间 × 类型与成员数
@@ -363,6 +348,17 @@ def build_markdown(namespaces, totals):
     return '\n'.join(lines)
 
 
+def get_version(sln_dir):
+    """读取 ScottPlot.csproj 的 <Version>（即编译产物 AssemblyInformationalVersion 的来源）"""
+    csproj = os.path.join(sln_dir, 'ScottPlot5', 'ScottPlot.csproj')
+    if os.path.exists(csproj):
+        with open(csproj, 'r', encoding='utf-8', errors='ignore') as fp:
+            m = re.search(r'<Version>([^<]+)</Version>', fp.read())
+        if m:
+            return m.group(1).strip()
+    return '(未知)'
+
+
 def default_out_dir():
     """探测当前用户桌面目录（与 scottplot5-stats.py 同规则）"""
     home = os.path.expanduser('~')
@@ -393,7 +389,10 @@ def main():
         CORE = os.path.join(SLN, 'ScottPlot5')
 
     namespaces, totals = collect_all(CORE)
+    # 版本号置于结果最前部，便于跨版本比对 API 面
+    version = get_version(SLN)
     result = OrderedDict()
+    result['version'] = version
     result['core'] = CORE
     result['totals'] = totals
     result['namespaces'] = namespaces
@@ -405,7 +404,7 @@ def main():
         md_path = os.path.join(out_dir, 'scottplot5-api.md')
         json_path = os.path.join(out_dir, 'scottplot5-api.json')
         with open(md_path, 'w', encoding='utf-8', newline='\n') as fp:
-            fp.write(build_markdown(namespaces, totals))
+            fp.write(build_markdown(namespaces, totals, version))
         with open(json_path, 'w', encoding='utf-8', newline='\n') as fp:
             fp.write(json.dumps(result, ensure_ascii=False, indent=2))
         if not args.json:
@@ -416,7 +415,7 @@ def main():
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     elif args.out is None:
-        print(build_markdown(namespaces, totals))
+        print(build_markdown(namespaces, totals, version))
 
 
 if __name__ == '__main__':
