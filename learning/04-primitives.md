@@ -10,7 +10,7 @@ Primitives 是 ScottPlot 的**原子层**，所有高级组件(Plottable、Rende
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    Primitives 层全景 (106 types)                     │
+│                    Primitives 层全景 (109 files)                      │
 ├───────────────┬──────────────┬──────────────┬──────────────────────┤
 │ 坐标/几何     │ 样式系统     │ 颜色系统     │ 轴与范围             │
 │ (15 types)    │ (18 types)   │ (70+ types)  │ (12 types)           │
@@ -185,7 +185,7 @@ public readonly struct LinePattern(float[] intervals, float phase, string name)
   // 可自定义任意 Pattern
 ```
 
-### 3.5 MarkerShape 枚举（22种预设形状）
+### 3.5 MarkerShape 枚举（26种预设形状）
 
 ```
 None, FilledCircle, OpenCircle, FilledSquare, OpenSquare,

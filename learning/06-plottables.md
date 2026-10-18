@@ -101,8 +101,8 @@ public class Bar
 
 ### 3.3 金融图表 (3个)
 
-| Plottable | 数据 | 特性 |
-|---|---|---|
+| Plottable | 数据 | 特性 | 接口 |
+|---|---|---|---|
 | **OHLCPlot** | `IOHLCSource` | 开/高/低/收盘—竖线 | `IHasLegendText` |
 | **CandlestickPlot** | `IOHLCSource` | 蜡烛图，自动红涨绿跌着色 | `IPlottableGL, IHasLegendText` |
 | **FinancialTimeAxis** | — | 金融时间轴（忽略非交易时段） | 特殊轴管理 |
@@ -241,22 +241,17 @@ Interactive/
 
 ```
 IPlottable        → 必须实现: IsVisible, Axes, GetAxisLimits(), Render(), LegendItems
-IHasLine          → LineStyle, LineWidth, LineColor, LinePattern
-IHasMarker        → MarkerStyle, MarkerShape, MarkerSize, MarkerFillColor, MarkerLineColor
-IHasFill          → FillStyle, FillColor, FillHatchColor, FillHatch
-IHasLegendText    → LegendText
-IHasArrow         → ArrowStyle
-IHasLabel         → LabelStyle
-IHasOutline       → OutlineStyle
-IHasShadow        → Shadow color/offset
-IHasBackground    → Background color
-IHasColorAxis     → Color axis (热力图等)
-IHasInteractiveHandles → 交互句柄
+IHasLine / IHasMarker / IHasFill / IHasLegendText / ... → 样式 Mixin（见下方说明）
 IGetNearest       → GetNearest() 最近点查询
 IManagesAxisLimits→ UpdateAxisLimits() 自动轴范围
 IRenderLast       → RenderLast() 最后渲染（覆盖在坐标轴上）
 IPlottableGL      → GPU 渲染 (Candlestick等)
+IHasInteractiveHandles → 交互句柄
 ```
+
+样式 Mixin 接口（IHasLine / IHasMarker / IHasFill / IHasLegendText / IHasArrow /
+IHasLabel / IHasOutline / IHasShadow / IHasBackground / IHasColorAxis）的完整属性
+清单与转发模式：见 [04-primitives §十](./04-primitives.md)。
 
 ---
 

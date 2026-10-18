@@ -114,38 +114,12 @@ dotnet build "src/ScottPlot5/ScottPlot5/ScottPlot.csproj" --configuration Releas
 
 ---
 
-## 四、本次编译结果
+## 四、编译结果（2026-10-18 验证）
 
-### 核心库编译 — ✅ 全部通过
-
-| 项目 | 结果 |
-|------|------|
-| ScottPlot（5 个 TFM） | ✅ 成功 |
-| ScottPlot Unit Tests | ✅ 成功 |
-
-### 完整解决方案编译 — ⚠️ 2 个错误（Android SDK 未安装）
-
-| 项目 | 桌面 TFM | Android TFM |
-|------|----------|-------------|
-| ScottPlot 核心库 | ✅ | — |
-| ScottPlot Unit Tests | ✅ | — |
-| ScottPlot Cookbook | ✅ | — |
-| ScottPlot.GLControl | ✅ | — |
-| ScottPlot.WinForms | ✅ | — |
-| ScottPlot.WPF | ✅ | — |
-| ScottPlot.Avalonia | ✅ | — |
-| ScottPlot.Eto | ✅ | — |
-| ScottPlot.OpenGL | ✅ | — |
-| ScottPlot.Blazor | ✅ | — |
-| ScottPlot.Maui | ✅ (net10.0) | ❌ XA5300 (net10.0-android) |
-| ScottPlot.WinUI | ✅ (3 个桌面 TFM) | ❌ XA5300 (net10.0-android) |
-| WinForms Demo | ✅ | — |
-| WPF Demo | ✅ | — |
-| Avalonia Demo | ✅ | — |
-| Graphical Test Runner | ✅ | — |
-| Benchmark | ✅ | — |
-
-**总计**：17 个项目 / 40+ 个 TFM 编译成功，2 个 android TFM 因缺少 Google Android SDK 失败
+- **核心库编译** ✅：ScottPlot（5 个 TFM）+ Unit Tests 全部通过
+- **完整解决方案** ⚠️：17 个项目 / 40+ 个 TFM 全部通过；仅 `ScottPlot.Maui` 与
+  `ScottPlot.WinUI` 的 `net10.0-android` TFM 因缺少 Google Android SDK 报 `XA5300` 失败
+  （不影响桌面开发，见 3.3 跳过方法）
 
 ---
 
@@ -165,6 +139,6 @@ dotnet build "src/ScottPlot5/ScottPlot5/ScottPlot.csproj" --configuration Releas
 
 | 文档 | 用途 |
 |------|------|
-| [project-structure.md](project-structure.md) | 项目源码目录导航 |
-| [getting-started.md](getting-started.md) | 新手入门，API 快速上手 |
-| [usage-caveats.md](usage-caveats.md) | 常见陷阱与注意事项 |
+| [02-project-structure.md](02-project-structure.md) | 项目源码目录导航 |
+| [00-getting-started.md](00-getting-started.md) | 新手入门，API 快速上手 |
+| [10-usage-caveats.md](10-usage-caveats.md) | 常见陷阱与注意事项 |

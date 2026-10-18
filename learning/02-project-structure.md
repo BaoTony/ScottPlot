@@ -1,6 +1,8 @@
 # ScottPlot 5 项目结构导航
 
 > 以 `src/ScottPlot5/ScottPlot5.sln` 为准 · VS IDE 视角 · 附带物理路径 · 2026-10-18
+>
+> 本文职责：**目录树、物理路径、导航速查**。各目录的原理剖析见对应分层文档（02-07），本文不重复。
 
 ---
 
@@ -154,7 +156,7 @@ ScottPlot5/
 
 ### 3.1 `Primitives/` — 原子数据结构 (109 files)
 
-> 详细参考：`learning/02-primitives/primitives-architecture.md`
+> 详细参考：`learning/04-primitives.md`
 
 所有上层组件的共享基础，分为以下子类别：
 
@@ -174,19 +176,9 @@ Primitives/
 └── 其他 (20+)        Platform, RenderDetails, SvgImage, CanvasState, ...
 ```
 
-| 关键类型 | 作用 |
-|---------|------|
-| `Coordinates` | 数据空间中的点（double X, double Y） |
-| `Pixel` | 屏幕空间中的点（float X, float Y） |
-| `CoordinateRect` | 数据空间矩形 → `ExpandingAxisLimits.Expand()` |
-| `PixelRect` | 屏幕空间矩形 → `Contains()` 剪裁判断 |
-| `Axes` | 坐标转换枢纽：`GetPixel(coord)` / `GetCoordinate(pixel)` |
-| `Color` | `readonly struct`，`WithAlpha()` 返回新值 |
-| `LineStyle` | 线型+颜色+宽度+图案+抗锯齿 |
-| `FillStyle` | 填充色+图案填充+抗锯齿 |
-| `AxisLimits` / `ExpandingAxisLimits` | 范围计算，后者只增不减 |
+> 各类型的字段、关系图与设计模式：见 `learning/04-primitives.md`。
 
-### 3.2 `Interfaces/` — 核心接口 (~60 files)
+### 3.2 `Interfaces/` — 核心接口 (51 files)
 
 系统的可扩展点——每个接口代表一个策略模式插入位置：
 
@@ -221,7 +213,7 @@ Interfaces/
 
 ### 3.3 `DataSources/` — 数据源 (28 files)
 
-> 详细参考：`learning/03-datasources/datasources-architecture.md`
+> 详细参考：`learning/05-datasources.md`
 
 ```
 DataSources/
@@ -245,15 +237,11 @@ DataSources/
     FunctionSource, CoordinateDataSource, VectorFieldDataSourceCoordinatesList
 ```
 
-| 关键区别 | ScatterSource | SignalSource |
-|---------|--------------|--------------|
-| X 值 | 任意离散 | 等间距（sampleRate） |
-| 大数据性能 | 全量渲染 | SegmentedTree 降采样 |
-| 实时追加 | 不支持 | DataLoggerSource |
+> 接口定义、实现矩阵、SegmentedTree 原理与数据源选型决策树：见 `learning/05-datasources.md`。
 
 ### 3.4 `Plottables/` — 可绘制物 (61 + 11 交互元素)
 
-> 详细参考：`learning/04-plottables/plottables-architecture.md`
+> 详细参考：`learning/06-plottables.md`
 
 ```
 Plottables/
@@ -285,59 +273,37 @@ Plottables/
         SharedVerticalLine    ← 跨子图共享交互线
 ```
 
-每个 Plottable 都继承统一代码模板：
-
-```
-class XxxPlot : IPlottable, IHasLine, IHasMarker, IHasLegendText, ...
-{
-    bool IsVisible { get; set; }      // 可见性
-    IAxes Axes { get; set; }          // 坐标系引用
-    AxisLimits GetAxisLimits()        // 告诉 Plot 数据范围
-    void Render(RenderPack rp)         // 画自己
-    IEnumerable<LegendItem> LegendItems // 图例项
-}
-```
+> 全部分类矩阵、统一代码模板与渲染模式分类：见 `learning/06-plottables.md`。
 
 ### 3.5 `Rendering/` — 渲染管道
 
-> 详细参考：`learning/05-rendering/rendering-architecture.md`
+> 详细参考：`learning/07-rendering.md`
 
 ```
 Rendering/
 ├── RenderManager.cs             ← 25 步管道调度器：初始化 → foreach 依次执行
 └── RenderActions/ (25 files)    ← 每步独立文件，实现 IRenderAction
-    ├── 01_PreRenderLock.cs              ← 获取渲染锁（防止并发渲染）
-    ├── 02_ClearCanvas.cs                ← 清空画布
-    ├── 03_ReplaceNullAxesWithDefaults   ← 未设轴的 Plottable → 默认轴
-    ├── 04_AutoScaleUnsetAxes            ← 自动缩放未手动设定的轴
-    ├── 05_ContinuouslyAutoscale         ← 持续自动缩放（DataStreamer）
-    ├── 06_ExecutePlottableAxisManagers  ← 执行 Plottable 的轴管理器
-    ├── 07_ApplyAxisRulesBeforeLayout    ← 应用布局前轴约束
-    ├── 08_CalculateLayout               ← 计算布局：DataRect + PanelRects
-    ├── 09_RenderFigureBackground        ← 绘制图表背景
-    ├── 10_ApplyAxisRulesAfterLayout     ← 应用布局后轴约束
-    ├── 11_RegenerateTicks               ← 根据 DataRect.Width 重新生成刻度
-    ├── 12_RenderStartingEvent           ← 触发 RenderStarting 事件
-    ├── 13_RenderDataBackground          ← 绘制数据区背景
-    ├── 14_StoreGLState                  ← 备份 OpenGL 状态
-    ├── 15_RenderGridsBelowPlottables    ← 绘制 Plottable 下层网格
-    ├── 16_RestoreGLState                ← 恢复 OpenGL 状态
-    ├── 17_RenderPlottables              ← 绘制所有 Plottable
-    ├── 18_RenderGridsAbovePlottables    ← 绘制 Plottable 上层网格
-    ├── 19_RenderLegends                 ← 绘制图例
-    ├── 20_RenderPanels                  ← 绘制面板（标题、ColorBar）
-    ├── 21_RenderBorders                 ← 绘制边框
-    ├── 22_RenderZoomRectangle           ← 绘制缩放矩形
-    ├── 23_SyncGLPlottables              ← 同步 OpenGL Plottable
-    ├── 24_RenderPlottablesLast          ← 绘制覆盖层（IRenderLast）
-    └── 25_RenderBenchmark               ← 绘制性能面板
+    ├── 01_PreRenderLock.cs            ├── 02_ClearCanvas.cs
+    ├── 03_ReplaceNullAxesWithDefaults ├── 04_AutoScaleUnsetAxes
+    ├── 05_ContinuouslyAutoscale       ├── 06_ExecutePlottableAxisManagers
+    ├── 07_ApplyAxisRulesBeforeLayout  ├── 08_CalculateLayout
+    ├── 09_RenderFigureBackground      ├── 10_ApplyAxisRulesAfterLayout
+    ├── 11_RegenerateTicks             ├── 12_RenderStartingEvent
+    ├── 13_RenderDataBackground        ├── 14_StoreGLState
+    ├── 15_RenderGridsBelowPlottables  ├── 16_RestoreGLState
+    ├── 17_RenderPlottables            ├── 18_RenderGridsAbovePlottables
+    ├── 19_RenderLegends               ├── 20_RenderPanels
+    ├── 21_RenderBorders               ├── 22_RenderZoomRectangle
+    ├── 23_SyncGLPlottables            ├── 24_RenderPlottablesLast
+    └── 25_RenderBenchmark
 ```
 
-关键原则：每个步骤前后 `rp.CanvasState.Save()` / `RestoreAll()` 保证隔离。
+> 每步的职责表、输入输出、RenderPack 结构与关键 RenderAction 源码剖析：
+> 见 `learning/07-rendering.md`。
 
 ### 3.6 `Interactivity/` — 交互系统 (~25 files)
 
-> 详细参考：`learning/06-interactivity/interactivity-controls-architecture.md`
+> 详细参考：`learning/08-interactivity.md`
 
 ```
 Interactivity/
@@ -355,7 +321,7 @@ Interactivity/
 │   MouseMove, LeftMouseDown/Up, MiddleMouseDown/Up,
 │   RightMouseDown/Up, MouseWheelDown/Up, KeyDown/Up, Unknown
 │
-└── UserActionResponses/ (13 files) ← 12 种响应器
+└── UserActionResponses/ (13 files) ← 13 个响应器（默认注册 10 个）
     MouseDragPan, MouseDragZoom, MouseDragZoomRectangle,
     MouseWheelZoom, MouseInteractWithPlottables,
     SingleClickAutoscale, SingleClickContextMenu,
@@ -364,7 +330,7 @@ Interactivity/
     KeyPressResponse, SingleClickResponse
 ```
 
-责任链机制：`UserInputProcessor` 按 `UserActionResponses[]` 顺序依次尝试匹配，第一个匹配成功后设置 `IsPrimary = true` 独占后续事件。
+> 事件流、责任链机制、默认优先级顺序与自定义响应器示例：见 `learning/08-interactivity.md`。
 
 ### 3.7 其余辅助目录
 
@@ -413,40 +379,15 @@ LegendLayouts/ (1)
 └── Wrapping
 ```
 
-#### Markers — 26 种标记形状
+#### Markers / Colormaps / Palettes
 
 ```
-Markers/
-├── 填充风格：FilledCircle, FilledSquare, FilledDiamond,
-│              FilledTriangleUp/Down, TriUp, TriDown
-├── 开放风格：OpenCircle, OpenSquare, OpenDiamond,
-│              OpenTriangleUp/Down, OpenCircleWithCross/Dot/Eks
-├── 特殊形状：Asterisk, Cross, Eks, HashTag, HorizonalBar, VerticalBar,
-│              CircleWithLineLeft/Right, TriangleWithLineLeft/Right, None
+Markers/    (26 files)  26 种标记形状：填充/开放/特殊形状 + None
+Colormaps/  (38 files)  科学配色：经典(Jet/Turbo/Viridis...)、海洋、地形、灰度、Custom 系列
+Palettes/   (26 files)  分类调色板：Category10/20、ColorblindFriendly、Nord、OneHalf...
 ```
 
-#### Colormaps — 35 种科学配色
-
-```
-Colormaps/
-├── 经典：Jet, Turbo, Viridis, Plasma, Inferno, Magma, Grayscale
-├── 海洋：Haline, Deep, Ice, Solar, Rain, Delta, Algae, Amp, Tempo, Thermal
-├── 陆地：Topo, Turbid, Matter, Speed, Dense
-├── 风格：MellowRainbow, Oxy, Phase
-├── 适配：Custom, CustomInterpolated, CustomPalette, Inverted, Reversed, InvertedHue
-└── 其他：Balance, Blues, Curl, Diff, Greens, Tarn
-```
-
-#### Palettes — 26 种分类调色板
-
-```
-Palettes/
-├── 经典：Normal, Dark, LightSpectrum, LightOcean, Frost
-├── 易用：Category10, Category20, ColorblindFriendly, ColorblindFriendlyDark
-├── 主题：Nord, OneHalf, OneHalfDark, Nero, PolarNight, Penumbra, Aurora
-├── 风格：Microcharts, PastelWheel, Building, Amber, Redness
-└── 其他：Tsitsulin, SummerSplash, SnowStorm, DarkPastel, Custom
-```
+> 完整清单、接口定义与使用方式：见 `learning/04-primitives.md`（颜色系统章节）。
 
 #### 统计与数学
 
@@ -478,7 +419,7 @@ IO/ (1)                   BitmapHeader
 
 ## 四、VS 文件夹 `Controls/` — 跨平台控件（8 个项目）
 
-> 详细参考：`learning/07-controls/controls-architecture.md`  
+> 详细参考：`learning/09-controls.md`  
 > 物理路径：`ScottPlot5 Controls/` · VS 中折叠于 `Controls/` 虚拟文件夹
 
 | VS 项目名 | NuGet 包 | 物理路径 |
@@ -503,14 +444,8 @@ IO/ (1)                   BitmapHeader
 
 OpenGL 控件额外包含 `GLPrograms/` 目录（12 个 Shader 源码）。
 
-**统一模式**：
-
-```
-平台事件 → UserInputProcessor.Process(action)
-    → Plot 状态修改
-    → Refresh()
-    → RenderManager.Render(canvas, rect)
-```
+> 各平台控件源码对比、渲染路径差异（Avalonia/Eto/Blazor 特殊处理）、HiDPI 检测与
+> Multiplot 系统：见 `learning/09-controls.md`。
 
 ---
 
@@ -680,13 +615,13 @@ ScottPlot5 Blazor/
 
 | 问题 | 学习文档 |
 |------|---------|
-| 5 条核心数据链路 | `learning/01-architecture/data-chains.md` |
-| Primitives 层详解 | `learning/02-primitives/primitives-architecture.md` |
-| DataSources 层详解 | `learning/03-datasources/datasources-architecture.md` |
-| Plottables 层详解 | `learning/04-plottables/plottables-architecture.md` |
-| 渲染管道详解 | `learning/05-rendering/rendering-architecture.md` |
-| 交互系统详解 | `learning/06-interactivity/interactivity-controls-architecture.md` |
-| 跨平台控件详解 | `learning/07-controls/controls-architecture.md` |
-| 新手入门 | `learning/notes/getting-started.md` |
-| 编译指南 | `learning/notes/build-guide.md` |
-| 常见陷阱 | `learning/notes/usage-caveats.md` |
+| 5 条核心数据链路 | `learning/03-data-chains.md` |
+| Primitives 层详解 | `learning/04-primitives.md` |
+| DataSources 层详解 | `learning/05-datasources.md` |
+| Plottables 层详解 | `learning/06-plottables.md` |
+| 渲染管道详解 | `learning/07-rendering.md` |
+| 交互系统详解 | `learning/08-interactivity.md` |
+| 跨平台控件详解 | `learning/09-controls.md` |
+| 新手入门 | `learning/00-getting-started.md` |
+| 编译指南 | `learning/01-build-guide.md` |
+| 常见陷阱 | `learning/10-usage-caveats.md` |

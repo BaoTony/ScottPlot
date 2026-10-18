@@ -31,7 +31,7 @@ myPlot.SavePng("chart.png", 800, 600);
 │  WinForms · WPF · Avalonia · Blazor · MAUI · WinUI · Eto │
 │           │                                              │
 │  Layer 6: 交互层 (Interactivity)                          │
-│  UserInputProcessor → 10 个响应器 → 拖拽/缩放/平移         │
+│  UserInputProcessor → 响应器责任链（默认 10 个）→ 拖拽/缩放/平移 │
 │           │                                              │
 │  Layer 5: 渲染层 (Rendering)                              │
 │  RenderManager → 25 步 RenderAction 管道 → SkiaSharp     │
@@ -269,63 +269,31 @@ myPlot.UserInputProcessor.UserActionResponses.Clear();
 
 ## 五、跨平台使用
 
-### 5.1 WinForms
+所有平台控件都实现 `IPlotControl`，用法完全一致：**拿到 `control.Plot` 添加内容，改完调 `control.Refresh()`**。
+
+| 平台 | 控件 | 引用方式 |
+|---|---|---|
+| WinForms | `FormsPlot` | 拖入窗体或 `new FormsPlot()` |
+| WPF | `WpfPlot` | `<ScottPlot:WpfPlot Name="MyWpfPlot" />` |
+| Avalonia | `AvaPlot` | `<ScottPlot:AvaPlot Name="MyAvaPlot" />` |
+| Blazor | `BlazorPlot` | `<BlazorPlot @ref="MyBlazorPlot" />` |
 
 ```csharp
-// 1. 拖入 FormsPlot 控件到窗体
-// 2. 或在代码中创建
-var fp = new ScottPlot.WinForms.FormsPlot();
-fp.Plot.Add.Scatter(xs, ys);
-fp.Refresh();
-```
-
-### 5.2 WPF
-
-```xaml
-<ScottPlot:WpfPlot Name="MyWpfPlot" />
-```
-
-```csharp
-MyWpfPlot.Plot.Add.Scatter(xs, ys);
-MyWpfPlot.Refresh();
-```
-
-### 5.3 Avalonia
-
-```xaml
-<ScottPlot:AvaPlot Name="MyAvaPlot" />
-```
-
-```csharp
-MyAvaPlot.Plot.Add.Scatter(xs, ys);
-MyAvaPlot.Refresh();
-```
-
-### 5.4 Blazor
-
-```razor
-<ScottPlot.Blazor.BlazorPlot @ref="MyBlazorPlot" />
-```
-
-```csharp
-MyBlazorPlot.Plot.Add.Scatter(xs, ys);
-MyBlazorPlot.Refresh();
-```
-
-### 5.5 跨平台通用模式
-
-所有平台控件都实现 `IPlotControl`，核心用法一致：
-
-```csharp
-IPlotControl control = ...;
+// 通用模式（各平台相同）
 control.Plot.Add.Scatter(xs, ys);  // 添加数据
-control.Refresh();                  // 刷新显示
-control.Reset(new Plot());          // 替换整个 Plot
+control.Refresh();                 // 刷新显示
+control.Reset(new Plot());         // 替换整个 Plot
 ```
+
+> 8 套控件的内部实现对比（渲染路径、HiDPI、触摸手势）：见
+> [learning/09-controls.md](./09-controls.md)。
 
 ---
 
-## 六、常见陷阱 Top 5
+## 六、常见陷阱
+
+> 完整的 15 条陷阱清单（含源码证据与踩坑概率评级）：见
+> [10-usage-caveats.md](10-usage-caveats.md)。此处仅列新手最高频的 5 条。
 
 ### 🥇 陷阱 1：忘记 Refresh()
 
@@ -336,53 +304,16 @@ xs[0] = 999;  // 修改了原始数据
 
 // ✅ 必须手动触发重绘
 myPlot.Refresh();  // GUI 模式
-myPlot.Render();   // 无 GUI 模式（导出图片前）
 ```
 
-### 🥈 陷阱 2：Color.WithAlpha() 不接收返回值
+### 其余 4 条高频陷阱（速览）
 
-```csharp
-// ❌ 颜色没变！（Color 是 readonly struct）
-Color c = Colors.Red;
-c.WithAlpha(128);
-
-// ✅ 必须重新赋值
-c = c.WithAlpha(128);
-myPlot.PlottableList[0].MarkerColor = Colors.Blue.WithAlpha(128);
-```
-
-### 🥉 陷阱 3：SetLimits 后 AutoScale 失效
-
-```csharp
-myPlot.Axes.SetLimitsX(0, 100);  // 锁死 X 轴
-// 之后加的任何数据都不会改变 X 轴范围！
-
-// ✅ 解决方案
-myPlot.Axes.AutoScale();          // 手写范围+
-myPlot.Axes.AutoScaleX();         // 只需 X
-```
-
-### 4. 陷阱 4：大数据用错了类型
-
-```csharp
-// ❌ 100 万点散点图 → 卡死
-double[] bigXs = ..., bigYs = ...;
-myPlot.Add.Scatter(bigXs, bigYs);
-
-// ✅ 用 Signal（等间距 X）+ SegmentedTree O(log n) 降采样
-myPlot.Add.Signal(bigYs, sampleRate: 1.0 / 100_000);
-```
-
-### 5. 陷阱 5：混淆 Coordinates 和 Pixel
-
-```csharp
-// ❌ 错误：SkiaSharp 的 SKCanvas 方法只接受 float 像素坐标
-canvas.DrawCircle(10, 20, 5, paint);  // 10, 20 被当作像素
-
-// ✅ 正确：先用 Axes 把坐标转成像素
-Pixel px = myPlot.Axes.GetPixel(new Coordinates(10, 20));
-canvas.DrawCircle(px.X, px.Y, 5, paint);
-```
+| 陷阱 | 一句话 | 详见 |
+|---|---|---|
+| `Color.WithAlpha()` 不接收返回值 | `Color` 是 readonly struct，必须 `c = c.WithAlpha(...)` 重新赋值 | caveats §5 |
+| `SetLimits` 后 AutoScale 失效 | `HasBeenSet=true` 后自动缩放永久失效，需 `Reset()` | caveats §2 |
+| 大数据用错类型 | 百万点用 `Add.Signal()`（SegmentedTree 降采样），别用 `Add.Scatter()` | caveats §8 |
+| 混淆 Coordinates 和 Pixel | `Coordinates` 是 double 数据坐标，`Pixel` 是 float 屏幕坐标，别传错 | caveats §1/§4 |
 
 ---
 
@@ -397,22 +328,22 @@ canvas.DrawCircle(px.X, px.Y, 5, paint);
 第 2 天：深入定制
 ├── 学习 3.3 样式系统（颜色、线型、标记、填充）
 ├── 学习 3.4 轴系统（范围、标签、标题、网格）
-└── 阅读 learning/02-primitives/primitives-architecture.md
+└── 阅读 learning/04-primitives.md
 
 第 3 天：理解架构
-├── 学习 3.3 大数据降采样（Signal vs Scatter）
-├── 阅读 learning/03-datasources/datasources-architecture.md
-└── 阅读 learning/05-rendering/rendering-architecture.md（25 步渲染管道）
+├── 学习陷阱 4：大数据降采样（Signal vs Scatter）
+├── 阅读 learning/05-datasources.md
+└── 阅读 learning/07-rendering.md（25 步渲染管道）
 
 第 4 天：交互与控件
 ├── 学习 4 交互系统
-├── 阅读 learning/06-interactivity/interactivity-controls-architecture.md
-└── 阅读 learning/07-controls/controls-architecture.md
+├── 阅读 learning/08-interactivity.md
+└── 阅读 learning/09-controls.md
 
 第 5 天：动手项目
 ├── 做一个小项目（实时数据监控、科学图示、金融图表）
 ├── 尝试自定义 Plottable
-└── 阅读 learning/04-plottables/plottables-architecture.md
+└── 阅读 learning/06-plottables.md
 ```
 
 ---
@@ -458,6 +389,6 @@ canvas.DrawCircle(px.X, px.Y, 5, paint);
 | [ScottPlot Cookbook](https://scottplot.net/cookbook/5.0/) | 500+ 带截图的示例代码 |
 | [API 文档](https://scottplot.net/api/5.0/) | 完整 API 参考 |
 | [learning/ 学习笔记](../../learning/) | 项目架构深度剖析（本文档所在目录） |
-| [project-structure.md](project-structure.md) | 源码目录导航，快速定位代码位置 |
+| [02-project-structure.md](02-project-structure.md) | 源码目录导航，快速定位代码位置 |
 | [GitHub 仓库](https://github.com/ScottPlot/ScottPlot) | 源码 + Issues + Discussion |
 | [RenderManager.cs](../../src/ScottPlot5/ScottPlot5/Rendering/RenderManager.cs) | 25 步渲染序列唯一真相源 |
