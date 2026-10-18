@@ -308,6 +308,8 @@ ScottPlot 的在线 Cookbook 包含所有图表的可运行示例，是日常开
 | 轴与刻度 | [Axis and Ticks](https://scottplot.net/cookbook/5/AxisAndTicks) |
 | 全部图表类型 | [PlotTypes](https://scottplot.net/cookbook/5/) → 左侧导航选择具体图表 |
 
+> **本地浏览 Cookbook**（离线可用）：先 `dotnet test "ScottPlot5 Cookbook"` 生成 .md 和截图，再 `python scripts/cookbook-to-html.py` 转 .html，双击 `dev/www/cookbook/5/index.html` 即可浏览全部 400+ 示例。
+
 ---
 
 ## 九、下一步
