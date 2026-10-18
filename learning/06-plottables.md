@@ -1,6 +1,23 @@
 # ScottPlot 5 Plottables 层架构剖析
 
-> 61 根目录文件 + 10 个 Interactive 文件 + 1 个 SubplotPreRenderActions = 72 个文件 · ~8,400 行代码 · 占核心库 16.8%
+> 统一 IPlottable 契约 · IHas* Mixin 样式接口 · 按数据源/几何形态分类
+
+---
+
+## 数据流视角
+
+```
+// 构造链路
+Plot myPlot = new();  → 创建 Plot（PlottableList、Axes、RenderManager、Legend）
+myPlot.Add.Scatter(xs, ys);  → PlottableAdder 工厂方法
+  → 自动包装数据源 (ScatterSourceDoubleArray)
+  → 自动取色 (从 Plot 的调色板循环)
+  → new Scatter(source) → Plot.PlottableList.Add()
+
+// 样式链路
+scatter.LineWidth = 3;        → 属性转发 → LineStyle.Width = 3（无需重建对象）
+scatter.MarkerColor = Colors.Blue;  → MarkerStyle.Color = Blue
+```
 
 ---
 
@@ -8,15 +25,15 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                     Plottables 层全景 (72 files)                       │
+│                     Plottables 层全景                                  │
 ├───────────────┬──────────────┬───────────────┬──────────────────────┤
-│ 散点/信号 (7)  │ 柱状/条形 (3)│ 金融图表 (3)   │ 矢量/箭头 (2)        │
+│ 散点/信号     │ 柱状/条形    │ 金融图表       │ 矢量/箭头            │
 ├───────────────┼──────────────┼───────────────┼──────────────────────┤
-│ 热力/等值 (4)  │ 饼图/径向 (4)│ 极坐标/雷达 (4)│ 统计图表 (3)         │
+│ 热力/等值     │ 饼图/径向    │ 极坐标/雷达    │ 统计图表             │
 ├───────────────┼──────────────┼───────────────┼──────────────────────┤
-│ 直线/跨度 (8)  │ 形状图形 (5) │ 标注/文字 (7) │ 实时数据 (3)         │
+│ 直线/跨度     │ 形状图形    │ 标注/文字      │ 实时数据             │
 ├───────────────┼──────────────┼───────────────┼──────────────────────┤
-│ 交互工具 (10)  │ 装饰器 (2)  │ 其他 (6)      │ SubplotPreRender (1) │
+│ 交互工具      │ 装饰器      │ 其他          │ SubplotPreRender     │
 └───────────────┴──────────────┴───────────────┴──────────────────────┘
 ```
 
@@ -24,32 +41,9 @@
 
 ## 二、Plottable 统一模式
 
-每个 Plottable 遵循完全相同的代码模板：
+每个 Plottable 遵循统一模板：`IPlottable` 核心契约 + 按需组合 IHas* Mixin 接口（IHasLine, IHasMarker, IHasFill 等），样式属性通过转发模式委托给对应的 Style 对象。
 
-```
-class XxxPlot : IPlottable, IHasLine, IHasMarker, IHasLegendText, ...
-{
-    // ═══ 1. 接口实现 ═══
-    bool IsVisible { get; set; }
-    IAxes Axes { get; set; }        ← 坐标变换
-    AxisLimits GetAxisLimits()      ← 计算数据范围
-    void Render(RenderPack rp)      ← 绘制
-    IEnumerable<LegendItem> LegendItems  ← 图例
-    string LegendText { get; set; }  ← 图例文本
-
-    // ═══ 2. 样式属性（转发模式） ═══
-    LineStyle LineStyle { get; set; }
-    float LineWidth { get => LineStyle.Width; set => LineStyle.Width = value; }
-    Color LineColor { get => LineStyle.Color; set => LineStyle.Color = value; }
-
-    MarkerStyle MarkerStyle { get; set; }
-    MarkerShape MarkerShape { get => MarkerStyle.Shape; set => MarkerStyle.Shape = value; }
-    // ...
-
-    // ═══ 3. 数据源 ═══
-    IScatterSource Data { get; }   ← 持有对数据源的引用
-}
-```
+核心方法：`IsVisible` · `Axes` · `GetAxisLimits()` · `Render()` · `LegendItems`。详见 [04-primitives](04-primitives.md)（接口定义）和 [07-rendering](07-rendering.md)（Render 调用流程）。
 
 ---
 

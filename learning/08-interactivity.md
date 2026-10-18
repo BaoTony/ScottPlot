@@ -1,8 +1,18 @@
 # ScottPlot 5 交互系统架构剖析
 
-> 37 个文件 · UserInputProcessor + 13 个响应类（默认注册 10 个）· ~1,300 行
+> UserInputProcessor + 13 个响应器（默认注册 10 个）· IPlotControl 无关平台
 
 ---
+
+## 数据流视角
+
+```
+鼠标/键盘事件（平台控件捕获）
+  → UserInputProcessor.ProcessXXX()     ← 封装为 IUserAction（平台无关）
+  → 遍历 UserActionResponses[] 责任链    ← 第一个匹配者独占（IsPrimary）
+  → 修改 Plot 状态（Axes.Pan / SetLimits）
+  → PlotControl.Refresh()               ← 触发 25 步渲染管道（07-rendering）
+```
 
 ## 一、交互系统架构
 

@@ -1,6 +1,23 @@
 # ScottPlot 5 跨平台控件与多图系统
 
-> 8 个控件包（7 套平台控件 + 1 个 GPU 扩展）· 55 个 .cs · ~3,000 行 · IPlotControl + IPlotMenu + IMultiplot
+> 7 套平台控件 + 1 GPU 扩展 · IPlotControl + IPlotMenu + IMultiplot
+
+---
+
+## 数据流视角
+
+```
+平台控件（WinForms/WPF/Avalonia/Blazor/MAUI/WinUI/Eto）
+  → 实现 IPlotControl:
+      Plot = new() { PlotControl = this }
+      Multiplot = new Multiplot(Plot)
+      UserInputProcessor = new(this)
+      Menu = new XxxPlotMenu(this)
+  → 事件转发: 平台原生事件 → UserInputProcessor.ProcessXXX() (→ 08-interactivity)
+  → 渲染触发: Invalidate() / OnPaintSurface() → Multiplot.Render(SKCanvas, rect)
+                                                      ↓
+                                    RenderManager.Render() (→ 07-rendering)
+```
 
 ---
 
@@ -93,118 +110,30 @@ Blazor 的菜单实现是空壳（浏览器环境不支持原生菜单）。
 
 ---
 
-## 四、控件源码对比（对称性）
+## 四、控件源码对比
 
-### WinForms
+所有平台控件结构高度对称，以 WinForms 为参考：
 
 ```csharp
 public abstract class FormsPlotBase : UserControl, IPlotControl
 {
-    // 构造
     public FormsPlotBase() {
-        Plot = new() { PlotControl = this };        // ①
-        Multiplot = new Multiplot(Plot);            // ②
-        DisplayScale = DetectDisplayScale();        // ③
-        UserInputProcessor = new(this);             // ④
-        Menu = new FormsPlotMenu(this);             // ⑤
+        Plot = new() { PlotControl = this };
+        Multiplot = new Multiplot(Plot);
+        UserInputProcessor = new(this);
+        Menu = new FormsPlotMenu(this);
     }
-    // 事件 → 转发到 UserInputProcessor
     void SKElement_MouseDown(...) => UserInputProcessor.ProcessMouseDown(e);
     // 渲染 → OnPaintSurface 自动完成
 }
 ```
 
-### WPF
-
-```csharp
-public abstract class WpfPlotBase : Control, IPlotControl
-{
-    // 构造（同上，①②③④⑤）
-    public WpfPlotBase() { /* ... */ }
-    // 事件 → 转发到 UserInputProcessor（注意 WPF 需要 CaptureMouse）
-    void SKElement_MouseDown(...) => {
-        Keyboard.Focus(this);
-        UserInputProcessor.ProcessMouseDown(element, e);
-        (sender as UIElement)?.CaptureMouse();
-    };
-    // 渲染 → OnPaintSurface
-}
-```
-
-### Avalonia（最特殊的渲染路径）
-
-```csharp
-public class AvaPlot : Control, IPlotControl
-{
-    // 构造（同上，①②③④⑤ + ClipToBounds + Focusable）
-    public AvaPlot() { /* ... */ }
-
-    // ★ 渲染：通过 ICustomDrawOperation + ISkiaSharpApiLeaseFeature
-    private class CustomDrawOp : ICustomDrawOperation
-    {
-        public void Render(ImmediateDrawingContext context) {
-            var lease = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
-            using var lease = lease.Lease();
-            lease.SkCanvas.SaveLayer();          // 独立图层
-            Multiplot.Render(lease.SkCanvas, rect);
-        }
-    }
-    public override void Render(DrawingContext context) {
-        context.Custom(new CustomDrawOp(Bounds, Multiplot));
-    }
-
-    // ★ Refresh：通过 Dispatcher 异步调用
-    public void Refresh() {
-        Dispatcher.UIThread.InvokeAsync(InvalidateVisual, DispatcherPriority.Background);
-    }
-}
-```
-
-**Avalonia 的特殊性**：不走 `SKControl` 标准路径，而是通过 `ICustomDrawOperation` + `ISkiaSharpApiLeaseFeature` 直接获取 SkiaSharp 画布。这是因为它使用的是 Avalonia 自己的 SkiaSharp 后端，不是 SkiaSharp.Views。
-
-### Blazor（Web 最特殊）
-
-```csharp
-public class BlazorPlotBase : ComponentBase, IPlotControl
-{
-    [Parameter] public string Style { get; set; }
-    [Parameter] public bool EnableRenderLoop { get; set; }  // 自动刷新
-
-    // 交互：Blazor 有独立的 JS 互操作路径
-    public EventHandler<Pixel>? MouseMoved;
-    public EventHandler<(Pixel, MouseButton)>? MouseButtonPressed;
-    public EventHandler<(Pixel, MouseButton)>? MouseButtonReleased;
-    public EventHandler<(Pixel, double)>? MouseWheelChanged;
-    public EventHandler<Key>? KeyPressed;
-    public EventHandler<Key>? KeyReleased;
-
-    // 渲染：由 .razor 模板（BlazorPlot.razor）控制
-    //   <SKCanvas @ref="SKCanvasElement" Width="800" Height="600"
-    //             OnPaintSurface="OnPaintSurface"
-    //             onwheel="MouseWheel" ... />
-}
-```
-
-### MAUI（移动端优先）
-
-```csharp
-public class MauiPlot : SKCanvasView, IPlotControl
-{
-    public MauiPlot() {
-        // ... ①②③④⑤
-
-        if (DeviceInfo.Idiom == DeviceIdiom.Desktop) {
-            // 桌面 → 触摸事件（鼠标模拟）
-            Touch += MauiPlot_Touch;
-        } else {
-            // 移动端 → 手势识别器
-            GestureRecognizers.Add(new PinchGestureRecognizer());   // 双指缩放
-            GestureRecognizers.Add(new PanGestureRecognizer());      // 平移
-            GestureRecognizers.Add(new TapGestureRecognizer());      // 双击 = 捏合点缩放
-        }
-    }
-}
-```
+| 平台 | 与 WinForms 的差异 |
+|---|---|
+| WPF | 继承 Control，需额外 `CaptureMouse()` + `Keyboard.Focus(this)` |
+| Avalonia | 不走 SKControl，通过 ICustomDrawOp + ISkiaSharpApiLeaseFeature 获取画布；Refresh 经 Dispatcher 异步调用 |
+| Blazor | 继承 ComponentBase，交互由 JS 互操作转发至独立事件委托；菜单为空壳 |
+| MAUI | 继承 SKCanvasView，支持 Touch 手势；桌面降级时走 Touch 事件模拟鼠标 |
 
 ### WinUI（Windows 原生 3）
 

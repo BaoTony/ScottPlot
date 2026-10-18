@@ -1,12 +1,33 @@
 # ScottPlot 5 渲染管道深度剖析
 
-> 25 个 RenderAction + RenderManager + RenderPack · RenderManager 仅 ~180 行（177 行），每步一个独立类
+> 25 步 RenderAction 管道 · RenderManager 仅 ~180 行 · 每步一个独立类
+
+---
+
+## 数据流视角
+
+```
+control.Refresh()  plot.SavePng()  plot.Render(canvas, rect)
+        │                │                │
+        └────────────────┼────────────────┘
+                         ▼
+              RenderManager.Render(canvas, rect)
+                │
+                ├─ 最多重试 5 次（轴范围连续变化时自动重渲染）
+                └─ RenderOnce(canvas, rect):
+                     using RenderPack rp = new(Plot, rect, canvas)
+                     foreach IRenderAction in RenderActions  ← 25 步顺序执行
+                       CanvasState.Save() → action.Render(rp) → RestoreAll()
+                     → 构建 RenderDetails
+                     → 触发 RenderFinished → SizeChanged → AxisLimitsChanged
+```
 
 ---
 
 ## 一、架构概览
 
 ```
+
 ┌─────────────────────────────────────────────────────────────┐
 │                     渲染管道架构                              │
 ├─────────────────────────────────────────────────────────────┤
@@ -27,9 +48,8 @@
 │              │     rp.CanvasState.Save()                     │
 │              │     action.Render(rp)   ← 执行当前步骤        │
 │              │     rp.CanvasState.RestoreAll()               │
-│              │     record (name, elapsed)                    │
 │              │                                               │
-│              ├─ 构建 RenderDetails (记录每次渲染的元数据)      │
+│              ├─ 构建 RenderDetails                           │
 │              │                                               │
 │              └─ 触发事件:                                    │
 │                   RenderFinished → SizeChanged → AxisLimitsChanged │
@@ -37,7 +57,7 @@
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**注意**：`Plot` 本身没有 `Refresh()` 方法——它是 `IPlotControl` 的成员（[IPlotControl.cs](file:///d:/dev/store/ScottPlot/src/ScottPlot5/ScottPlot5/Interfaces/IPlotControl.cs#L18)）。平台控件的 `Invalidate()` 只是触发重绘事件，最终仍走 `control.Refresh()`。
+**注意**：`Plot` 本身没有 `Refresh()` 方法——它是 `IPlotControl` 的成员。平台控件的 `Invalidate()` 只是触发重绘事件，最终仍走 `control.Refresh()`。
 
 ---
 

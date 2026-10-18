@@ -9,28 +9,25 @@
 
 ```
 learning/
-├── README.md                  ← 本文件（入口索引，不编号）
-├── 00-getting-started.md      ← 从这开始：跑起来第一个图
-├── 01-build-guide.md          ← 编译环境与 TFM 说明
-├── 02-project-structure.md    ← 源码地图：目录树与导航速查
-├── 03-data-chains.md          ┐
-├── 04-primitives.md           │
-├── 05-datasources.md          │ 分层架构文档（自底向上：
-├── 06-plottables.md           │ 原子层 → 数据源 → 图表 →
-├── 07-rendering.md            │ 渲染 → 交互 → 控件）
-├── 08-interactivity.md        │
+├── README.md                  ← 本文件（入口索引）
+├── 00-getting-started.md      ← 从这开始：架构速览 + 5 分钟上手 + 搭建环境
+├── 02-project-structure.md    ← 源码地图：目录速查
+├── 04-primitives.md           ┐
+├── 05-datasources.md          │
+├── 06-plottables.md           │ 分层架构文档（自底向上：
+├── 07-rendering.md            │ 原子层 → 数据源 → 图表 →
+├── 08-interactivity.md        │ 渲染 → 交互 → 控件）
 ├── 09-controls.md             ┘
 ├── 10-usage-caveats.md        ← 全程伴随：29 条陷阱
-├── demos/                     ← 动手实验代码（占位）
 ├── archive/                   ← 历史材料
 └── scripts/                   ← 统计脚本等辅助工具
 ```
 
 ## 阅读路径
 
-**新手路径**（从零到理解全库，约 5 天）：按文件名编号 00 → 10 依次阅读即可。
-建议节奏：第 1 天读 00-01，第 2 天读 02-03，第 3 天读 04-07，第 4 天读 08-09，
-10 号陷阱文档全程伴随、写代码前先过一遍。
+**新手路径**（从零到理解全库）：按文件名编号 00 → 10 依次阅读。建议节奏：
+第 1 天读 00-02（入门 + 源码地图），第 2 天读 04-06（Primitives → Plottables），
+第 3 天读 07-09（渲染 → 控件），10 号陷阱文档全程伴随、写代码前先过一遍。
 
 **按需查阅**：带着问题直接跳文档，见下方矩阵的"真相源"列。
 
@@ -40,16 +37,14 @@ learning/
 
 | 主题 | 真相源 | 其他文档 |
 |---|---|---|
-| 新手入门 / API 速成 | `00-getting-started.md` | — |
-| 编译 / TFM / 工作负载 | `01-build-guide.md` | — |
+| 新手入门 / API 速成 / 搭建环境 | `00-getting-started.md` | — |
 | 目录树、物理路径、导航速查 | `02-project-structure.md` | — |
-| 全库鸟瞰 / 5 条链路 | `03-data-chains.md` | — |
 | 双坐标系、样式 Mixin、Colormaps/Palettes 清单 | `04-primitives.md` | 其余文档仅引用 |
 | 数据源选型、SegmentedTree 降采样 | `05-datasources.md` | — |
 | Plottable 分类矩阵与统一模板 | `06-plottables.md` | — |
 | 25 步渲染序列、RenderPack 结构 | `07-rendering.md` | — |
 | 交互责任链、默认响应器优先级 | `08-interactivity.md` | — |
-| IPlotControl、8 平台对比、Multiplot | `09-controls.md` | — |
+| IPlotControl、平台控件对比、Multiplot | `09-controls.md` | — |
 | 陷阱（29 条，含源码证据） | `10-usage-caveats.md` | 00 号文档仅留速览表 |
 
 ## 维护规则

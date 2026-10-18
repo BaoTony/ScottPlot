@@ -1,6 +1,22 @@
 # ScottPlot 5 数据源系统深度剖析
 
-> 28 个文件 · ~3,776 行代码 · 占核心库 7.5%
+> 约占核心库 1/13 · Scatter / Signal / OHLC / 实时流 四大体系
+
+---
+
+## 数据流视角
+
+```
+用户数据 (double[] / List<T> / IDataSource<T>)
+  → PlottableAdder 自动包装为对应的 ISource 实现
+  → IXXXSource（本章主角）
+      Scatter:  GetScatterPoints() → Coordinates[]（ZipView 惰性视图，零拷贝）
+      Signal:   GetPixelColumns() → SegmentedTree 降采样 → 每像素列画 min→max
+  → IPlottable.Data（→ 06-plottables）
+
+导出链路: plot.SavePng() → GetImage(800,600) → RenderManager.Render() → Encode
+                                  ↑ 与交互渲染共用同一管道
+```
 
 ---
 
@@ -8,12 +24,12 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                    DataSources 层全景 (28 types)                   │
+│                    DataSources 层全景                              │
 ├──────────────────────┬────────────────────┬─────────────────────┤
-│ IScatterSource (6)   │ ISignalSource (9)  │ IOHLCSource (3)     │
-│ 离散XY散点数据        │ 等间距大数据         │ 金融K线数据           │
+│ IScatterSource       │ ISignalSource      │ IOHLCSource         │
+│ 离散XY散点数据       │ 等间距大数据        │ 金融K线数据          │
 ├──────────────────────┼────────────────────┼─────────────────────┤
-│ 实时数据流 (2)        │ 优化引擎 (3)        │ 辅助 (5)            │
+│ 实时数据流           │ 优化引擎            │ 辅助                │
 │ DataLogger/Streamer  │ SegmentedTree      │ Function, Vector... │
 │                      │ MinMaxCache        │ CoordinateData...   │
 │                      │ SignalInterpolation│                     │

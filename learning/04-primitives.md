@@ -1,19 +1,29 @@
 # ScottPlot 5 Primitives 层架构剖析
 
-> 109 个文件 · ~8,790 行代码 · 占核心库 17.6%
+> 约占核心库 1/6 · 以 class 和 struct 为主体 · 辅以少量 enum 与 interface
+
+---
+
+## 数据流视角
+
+```
+用户数据 (double[] xs, ys / Coordinates[])
+  → ScatterSourceDoubleArray / ScatterSourceCoordinatesArray (→ 05-datasources)
+  → Scatter.Render():
+      Coordinates[] → Axes.GetPixel() → Pixel[]
+      → MarkerStyle.Render() / LineStyle.Apply() → SKCanvas
+                                                ↑ 本章主角：所有样式、坐标、颜色类型
+```
 
 ---
 
 ## 一、总览：Primitives 层分类
 
-Primitives 是 ScottPlot 的**原子层**，所有高级组件(Plottable、RenderManager、AxisManager)都构建其上。
+Primitives 是 ScottPlot 的**原子层**，所有高级组件(Plottable、RenderManager、AxisManager)都构建其上。按声明形式以 class 和 struct 为主体，辅以少量 enum 与 interface。
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    Primitives 层全景 (109 files)                      │
-├─────────────────────────────────────────────────────────────────────┤
-│  按声明形式分类（实测）：37 struct · 3 record struct · 46 class        │
-│  · 2 interface (IAutoScaler, IAxisLimitManager) · 21 enum = 109       │
+│                    Primitives 层全景                                  │
 ├───────────────┬──────────────┬──────────────┬──────────────────────┤
 │ 坐标/几何     │ 样式系统     │ 颜色系统     │ 轴与范围             │
 ├───────────────┼──────────────┼──────────────┼──────────────────────┤
