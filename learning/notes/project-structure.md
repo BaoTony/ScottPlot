@@ -115,24 +115,24 @@ ScottPlot5/
 ```
 ScottPlot5/
 ├── Primitives/             109  ← Layer 2: 原子数据结构
-├── Interfaces/             ~60  ← Layer 2: 核心接口
+├── Interfaces/             51  ← Layer 2: 核心接口
 ├── DataSources/             28  ← Layer 3: 数据源实现
 ├── Plottables/              61  ← Layer 4: 可绘制物
 │   └── Interactive/         11  ← 可拖拽交互元素
 ├── Rendering/                1  ← Layer 5: 渲染入口
 │   └── RenderActions/       25  ← 每步一个独立文件
-├── Interactivity/           ~25  ← Layer 6: 交互系统
+├── Interactivity/           37  ← Layer 6: 交互系统
 ├── TickGenerators/          15  ← 刻度生成
 ├── LayoutEngines/            5  ← 布局引擎
-├── AxisPanels/              12  ← 轴面板
-├── AxisRules/               16  ← 轴约束规则
+├── AxisPanels/              11  ← 轴面板
+├── AxisRules/               17  ← 轴约束规则
 ├── AxisLimitManagers/        3  ← 实时轴范围管理
 ├── AutoScalers/              1  ← 自动缩放策略
 ├── Panels/                   4  ← 图表面板（标题/图例/ColorBar）
 ├── Grids/                    1  ← 网格线
 ├── Markers/                 26  ← 26 种标记形状
-├── ArrowShapes/              7  ← 箭头形状
-├── Colormaps/               35  ← 科学配色方案
+├── ArrowShapes/              8  ← 箭头形状
+├── Colormaps/               38  ← 科学配色方案
 ├── Palettes/                26  ← 分类调色板
 ├── PathStrategies/           4  ← 连线策略（直线/样条/阶梯）
 ├── Statistics/               6  ← 统计计算
@@ -146,7 +146,6 @@ ScottPlot5/
 ├── MultiplotLayouts/         2  ← 多图布局
 ├── LegendLayouts/            1  ← 图例排版
 ├── IO/                       1  ← I/O 辅助
-└── LegendLayouts/            1  ← 图例排版
 ```
 
 ---
@@ -258,20 +257,21 @@ DataSources/
 
 ```
 Plottables/
-├── 散点/信号 (6)   Scatter, Signal, SignalXY, SignalConst, LinePlot, Markers
+├── 散点/信号 (7)   Scatter, Signal, SignalXY, SignalConst, LinePlot,
+│                    Markers, FunctionPlot
 ├── 柱状/条形 (3)   BarPlot, LollipopPlot, Bracket
 ├── 金融图表 (3)    CandlestickPlot, OHLCPlot, FinancialTimeAxis
 ├── 热力/等值 (4)   Heatmap, IsoLines, ContourLines, TINPlot
 ├── 饼图/径向 (4)   Pie, PieBase, Coxcomb, RadialGaugePlot
-├── 极坐标/雷达 (4) PolarAxis, Radar, SmithChartAxis, Phasor
+├── 极坐标/雷达 (5) PolarAxis, Radar, SmithChartAxis, Phasor, TriangularAxis
 ├── 统计图表 (3)    BoxPlot, HistogramBars, PopulationSymbol
 ├── 直线/跨度 (7)   VerticalLine, HorizontalLine, VerticalSpan,
 │                    HorizontalSpan, AxisLine, AxisSpan, FloatingAxis
 ├── 形状图形 (5)    Rectangle, Ellipse, Polygon, ImageRect, ImageMarker
-├── 标注/文字 (3)   Text, Annotation, Callout
+├── 标注/文字 (4)   Text, Annotation, Callout, Marker
 ├── 实时数据 (3)    DataLogger, DataStreamer, DataStreamerXY
 ├── 箭头/矢量 (3)   Arrow, VectorField, ErrorBar
-├── 工具/辅助 (5)   Benchmark, ZoomRectangle, ScaleBar, TickModifierLabel,
+├── 工具/辅助 (8)   Benchmark, ZoomRectangle, ScaleBar, TickModifierLabel,
 │                    RadialGauge, Tooltip, Crosshair, FillY
 ├── 装饰器 (2)      DraggablePlottableDecorator, HittablePlottableDecorator
 │
@@ -279,7 +279,8 @@ Plottables/
     InteractiveVerticalLine, InteractiveHorizontalLine,
     InteractiveVerticalSpan, InteractiveHorizontalSpan,
     InteractiveRectangle, InteractiveMarker,
-    InteractiveLineSegment, InteractiveTrendLine, ...
+    InteractiveLineSegment, InteractiveTrendLine,
+    InteractiveHorizontalLineSegment, InteractiveVerticalLineSegment
     └── SubplotPreRenderActions/
         SharedVerticalLine    ← 跨子图共享交互线
 ```
