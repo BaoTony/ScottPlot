@@ -249,3 +249,11 @@ plotControl.UserInputProcessor.UserActionResponses.Insert(0, new MyCustomRespons
 5. **键盘修饰键的灵活组合**：`MouseWheelZoom` 默认构造为 `MouseWheelZoom(StandardKeys.Shift, StandardKeys.Control)`——按住 Shift 锁定水平（只缩放 Y），按住 Ctrl 锁定垂直（只缩放 X），实现分轴缩放。
 
 6. **状态重置的两层机制**：`Reset()` 是**重建默认响应器列表**并清空按键状态；真正遍历所有响应器调用 `ResetState()` 的是静态方法 `UserInputProcessor.ResetState(control)`——控件失焦时经 `LostFocusAction` 自动触发，清理活跃的拖拽/按键状态，防止残留状态导致下次交互行为异常。
+
+---
+
+## 九、实战参考
+
+| 主题 | Cookbook 入口 |
+|------|--------------|
+| 可拖拽交互 | [Interactive Plottables](https://scottplot.net/cookbook/5/InteractivePlottables) |

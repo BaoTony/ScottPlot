@@ -192,7 +192,125 @@ dotnet build ScottPlot5/ScottPlot.csproj  # 仅核心库 ~15s
 
 ---
 
-## 七、下一步
+## 七、10 分钟实战演练
+
+从零开始，做一个完整的数据可视化小项目：**模拟传感器温度监控面板**。
+
+### 7.1 创建项目
+
+```powershell
+dotnet new console -n TempMonitor
+cd TempMonitor
+dotnet add package ScottPlot
+```
+
+用你喜欢的 IDE 打开 `Program.cs`。
+
+### 7.2 生成模拟数据
+
+```csharp
+using ScottPlot;
+
+// 模拟：过去 24 小时的温度采样（每小时一条）
+double[] hours = Generate.Consecutive(24);
+double[] temperatures = Generate.Sin(24, oscillations: 1);
+// Sin 生成的 -1~1 映射到 15°C~35°C
+for (int i = 0; i < temperatures.Length; i++)
+    temperatures[i] = 20 + temperatures[i] * 10 + Generate.RandomNumber(0, 3);
+```
+
+### 7.3 绘制图谱
+
+```csharp
+Plot myPlot = new();
+
+// 主图：温度折线
+var line = myPlot.Add.ScatterLine(hours, temperatures);
+line.LineWidth = 2;
+line.LineColor = Colors.Coral;
+line.LegendText = "温度 (°C)";
+
+// 标注：最高温和最低温
+double maxTemp = temperatures.Max();
+double minTemp = temperatures.Min();
+int maxIdx = Array.IndexOf(temperatures, maxTemp);
+int minIdx = Array.IndexOf(temperatures, minTemp);
+myPlot.Add.Callout($"最高 {maxTemp:F1}°C", hours[maxIdx], maxTemp);
+myPlot.Add.Callout($"最低 {minTemp:F1}°C", hours[minIdx], minTemp);
+
+// 参考线：警戒温度
+var warnLine = myPlot.Add.HorizontalLine(33);
+warnLine.LineColor = Colors.Red.WithAlpha(0.5);
+warnLine.LinePattern = LinePattern.Dashed;
+warnLine.LegendText = "警戒线 (33°C)";
+```
+
+### 7.4 定制外观
+
+```csharp
+myPlot.Title("24 小时温度监控");
+myPlot.Axes.Bottom.Label.Text = "小时";
+myPlot.Axes.Left.Label.Text = "温度 (°C)";
+myPlot.ShowLegend(alignment: Alignment.UpperRight);
+myPlot.Grid.MajorLineColor = Colors.Gray.WithAlpha(0.2);
+```
+
+### 7.5 导出图像
+
+```csharp
+myPlot.SavePng("temperature.png", 1200, 600);
+// 输出: temperature.png (1200×600px)
+```
+
+运行 `dotnet run`，你应该得到一张 `temperature.png`。完整代码 ~40 行。
+
+### 7.6 进阶：把它变成交互式窗口（WinForms，20 行）
+
+```csharp
+// 新建 WinForms 项目后，工具箱拖入 FormsPlot 控件
+// 或者在 Program.cs 中直接创建：
+using ScottPlot.WinForms;
+
+Application.Run(new Form
+{
+    Width = 1000, Height = 600,
+    Controls = { new FormsPlot
+    {
+        Dock = DockStyle.Fill,
+        // Plot 属性就是上面的 myPlot，把前面的图表逻辑搬过来
+    }}
+});
+```
+
+现在你有了一个**可拖拽/缩放/右键菜单的交互式温度监控面板**。
+
+### 7.7 关键收获
+
+| 你刚刚做的事 | 对应的架构层 |
+|-------------|-------------|
+| `Generate.Consecutive(24)` - 生成数据 | DataSources 层 |
+| `Add.ScatterLine()` - 创建图表 | Plottables 层 |
+| `myPlot.SavePng()` - 导出 | Rendering 管道 |
+| `HorizontalLine` / `Callout` - 标注 | Plottables 装饰类 |
+| `LineColor` / `LinePattern` - 样式 | Primitives 样式系统 |
+| `FormsPlot` - 交互窗口 | Controls 层 |
+
+---
+
+## 八、实战参考
+
+ScottPlot 的在线 Cookbook 包含所有图表的可运行示例，是日常开发的最佳速查工具。
+
+| 主题 | Cookbook 入口 |
+|------|--------------|
+| 快速入门 | [Cookbook Quickstart](https://scottplot.net/cookbook/5/ScottPlotQuickstart) |
+| 图表样式 | [Styling Plots](https://scottplot.net/cookbook/5/Styling) |
+| 轴与刻度 | [Axis and Ticks](https://scottplot.net/cookbook/5/AxisAndTicks) |
+| 全部图表类型 | [PlotTypes](https://scottplot.net/cookbook/5/) → 左侧导航选择具体图表 |
+
+---
+
+## 九、下一步
 
 按文件名编号 00 → 08 依次阅读即可。建议节奏：
 

@@ -405,3 +405,14 @@ this.ZipView(other, selector) → 延迟 Zip 视图 (不拷贝)
 4. **泛型线段树**：`SegmentedTree<T>` 用编译时 Lambda 表达式（`Expression.Lambda`）生成类型特化的 Min/Max 操作，避免泛型的虚调用开销，达到接近裸写的性能。
 
 5. **实时数据独立封装**：`DataLogger` 和 `DataStreamer` 不实现标准 `IScatterSource`/`ISignalSource` 接口，而是拥有自己的 Source 类，因为它们有特殊的状态管理需求（HasNewData、环形缓冲等）。对应的 Plottable 直接理解这些 Source 类型。
+
+---
+
+## 实战参考
+
+| 主题 | Cookbook 入口 |
+|------|--------------|
+| Scatter 散点数据 | [Scatter Plot](https://scottplot.net/cookbook/5/Scatter) |
+| Signal 大数据 | [Signal Plot](https://scottplot.net/cookbook/5/Signal) · [SignalXY](https://scottplot.net/cookbook/5/SignalXY) |
+| 实时数据流 | [Live Data](https://scottplot.net/cookbook/5/LiveData) |
+| 金融 OHLC | [Finance](https://scottplot.net/cookbook/5/Finance) |

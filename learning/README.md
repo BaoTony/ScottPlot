@@ -55,3 +55,4 @@ learning/
 3. **数字口径以源码为准**：引用数量前先核对目录/枚举实际值（`scripts/scottplot5-stats.py` 可辅助统计）。
 4. **每篇文档开头的一行职责声明**不得删除，它标注了该文档与矩阵的对应关系。
 5. 若某个层未来需要多篇子笔记，可为该层单独建文件夹（如 `05-rendering/`），届时同步更新本 README 与矩阵。
+6. 每篇文档末尾的 `## 实战参考` 节链接到 Cookbook 对应分类；当 Cookbook 新增分类或重命名时，用 `grep "scottplot.net/cookbook" learning/*.md` 批量检查链接有效性。

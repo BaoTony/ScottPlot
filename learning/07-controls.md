@@ -330,3 +330,11 @@ float DetectDisplayScale() => XamlRoot.RasterizationScale;
 6. **MAUI 的手势适配**：桌面（Desktop idiom）和移动端使用完全不同的交互路径——桌面用 `SKTouchEventArgs`（模拟鼠标），移动端用 `PinchGestureRecognizer` + `PanGestureRecognizer`。`UserInputProcessor` 需要分别承载 `ProcessPanUpdated` 和 `ProcessPinchUpdated`。
 
 7. **布局可插拔**：`IMultiplotLayout` 定义了布局策略接口，`Rows`（默认）、`Grid`、`Columns`、`CustomGrid` 都是实现。用户可以传入自定义布局器实现完全自由的子图排列。
+
+---
+
+## 十、实战参考
+
+| 主题 | Cookbook 入口 |
+|------|--------------|
+| 多图布局 | [Multiplot](https://scottplot.net/cookbook/5/MultiplotRecipes) |

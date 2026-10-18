@@ -411,3 +411,15 @@ plot.ScaleFactorF = DisplayScale;
 3. **交互不响应**：检查 `UserInputProcessor.UserActionResponses` 顺序和 `IsPrimary` 状态
 4. **性能问题**：确认大数据用了 `ISignalSource` 而非 `IScatterSource`
 5. **颜色不生效**：检查 `WithAlpha()` 是否忘记了接收返回值
+
+---
+
+## 十、实战参考
+
+Cookbook 是最佳实践验证工具——当你对某个 API 行为不确定时，先查对应示例：
+
+| 主题 | Cookbook 入口 |
+|------|--------------|
+| 快速入门（验证基础知识） | [Quickstart](https://scottplot.net/cookbook/5/ScottPlotQuickstart) |
+| 样式系统（验证颜色/透明度） | [Styling Plots](https://scottplot.net/cookbook/5/Styling) |
+| 全部图表 | [Cookbook 首页](https://scottplot.net/cookbook/5/) |

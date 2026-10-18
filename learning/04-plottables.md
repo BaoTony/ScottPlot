@@ -297,4 +297,26 @@ Render(rp):
 
 6. **FinancialTimeAxis 的巧妙设计**：不是一个独立的轴类型，而是一个特殊 Plottable，在渲染时介入 `AxisManager` 的行为，实现"跳过非交易时段"的 X 轴显示。
 
-7. **SignalConst 已成历史**：`SignalConst<T>` 已标记 `[Obsolete]`，其内部就是 `Signal` + `SignalConstSource<T>`（SegmentedTree 预构建优化）。新代码直接用 `Add.Signal()` 即可。
+---
+
+## 七、实战参考
+
+每个 Plottable 在 Cookbook 中都有独立分类，含完整可运行示例：
+
+| 类别 | Cookbook 入口 | 对应 Plottable |
+|------|--------------|----------------|
+| 散点/信号 | [Scatter](https://scottplot.net/cookbook/5/Scatter) · [Signal](https://scottplot.net/cookbook/5/Signal) · [SignalXY](https://scottplot.net/cookbook/5/SignalXY) · [Line](https://scottplot.net/cookbook/5/LinePlot) · [FillY](https://scottplot.net/cookbook/5/FillY) | Scatter, Signal, SignalXY, LinePlot, FillY |
+| 柱状/条形 | [Bar](https://scottplot.net/cookbook/5/Bar) · [Lollipop](https://scottplot.net/cookbook/5/Lollipop) · [Coxcomb](https://scottplot.net/cookbook/5/Coxcomb) | BarPlot, LollipopPlot, Coxcomb |
+| 金融图表 | [Finance](https://scottplot.net/cookbook/5/Finance) | OhlcPlot, CandlestickPlot |
+| 热力/等值 | [Heatmap](https://scottplot.net/cookbook/5/Heatmap) · [Contour](https://scottplot.net/cookbook/5/Contour) | Heatmap, IsoLines, ContourLines |
+| 饼图/径向 | [Pie](https://scottplot.net/cookbook/5/Pie) · [Radial Gauge](https://scottplot.net/cookbook/5/RadialGauge) | Pie, RadialGaugePlot |
+| 极坐标/特殊轴 | [Polar Axis](https://scottplot.net/cookbook/5/PolarAxis) · [Radar](https://scottplot.net/cookbook/5/Radar) · [Triangular Axis](https://scottplot.net/cookbook/5/TriangularAxis) · [Smith Chart](https://scottplot.net/cookbook/5/SmithChart) | PolarAxis, Radar, TriangularAxis, SmithChartAxis |
+| 矢量/箭头 | [Vector Field](https://scottplot.net/cookbook/5/VectorField) · [Arrow](https://scottplot.net/cookbook/5/ArrowCoordinated) | VectorField, Arrow |
+| 统计图表 | [Box](https://scottplot.net/cookbook/5/Box) · [Error Bar](https://scottplot.net/cookbook/5/ErrorBar) · [Population](https://scottplot.net/cookbook/5/Population) | BoxPlot, ErrorBar, HistogramBars |
+| 直线/跨度 | [Axis Lines](https://scottplot.net/cookbook/5/AxisLines) · [Axis Spans](https://scottplot.net/cookbook/5/AxisSpans) · [Scale Bar](https://scottplot.net/cookbook/5/ScaleBar) | Horizontal/VerticalLine, Horizontal/VerticalSpan, ScaleBar |
+| 形状图形 | [Shapes](https://scottplot.net/cookbook/5/Shapes) · [Ellipse](https://scottplot.net/cookbook/5/Ellipse) · [Marker](https://scottplot.net/cookbook/5/Marker) | Rectangle, Ellipse, Polygon, Marker |
+| 标注/文字 | [Annotation](https://scottplot.net/cookbook/5/Annotation) · [Text](https://scottplot.net/cookbook/5/Text) · [Crosshair](https://scottplot.net/cookbook/5/Crosshair) · [Callout](https://scottplot.net/cookbook/5/Callout) · [Bracket](https://scottplot.net/cookbook/5/Bracket) | Annotation, Text, Crosshair, Callout, Bracket |
+| 实时数据 | [Live Data](https://scottplot.net/cookbook/5/LiveData) | DataLogger, DataStreamer |
+| 交互式 | [Interactive Plottables](https://scottplot.net/cookbook/5/InteractivePlottables) | InteractiveMarker, InteractiveLineSegment, ... |
+| 函数图像 | [Function](https://scottplot.net/cookbook/5/Function) | FunctionPlot |
+| 统计计算 | [Histograms](https://scottplot.net/cookbook/5/Histograms) · [Regression](https://scottplot.net/cookbook/5/Regression) · [Kernel Density Estimation](https://scottplot.net/cookbook/5/KernelDensityEstimation) | HistogramBars, 线性回归, 核密度估计 |

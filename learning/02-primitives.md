@@ -453,3 +453,14 @@ Render 时通过 is/as 模式检查接口：
 5. **样式属性转发**：`scatter.LineWidth = 3` 是语法糖，实际修改 `scatter.LineStyle.Width`，这样用户无需深入样式对象层次
 
 6. **LegendItem 是样式集大成者**：同时实现 5 个样式接口（另继承 LabelStyleProperties），是样式系统组合能力的完美展示
+
+---
+
+## 十二、实战参考
+
+| 主题 | Cookbook 入口 |
+|------|--------------|
+| 轴范围与刻度 | [Axis and Ticks](https://scottplot.net/cookbook/5/AxisAndTicks) · [Customizing Ticks](https://scottplot.net/cookbook/5/CustomizingTicks) |
+| 样式系统 | [Styling Plots](https://scottplot.net/cookbook/5/Styling) |
+| 颜色映射 | [Colors](https://scottplot.net/cookbook/5/ColorRecipes) |
+| 多坐标轴 | [Multi-Axis](https://scottplot.net/cookbook/5/MultiAxis) |

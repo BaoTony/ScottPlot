@@ -338,3 +338,14 @@ RenderDetails (readonly struct):
 5. **Z 序由 RenderAction 顺序决定**：先渲染的在下层。标准 Plottable 在步骤 17，`IRenderLast` Plottable 在步骤 24，网格线在 15/18 分上下两层。
 
 6. **最多 5 次重试是防御性设计**：当 DataLogger 等自动管理轴范围的 Plottable 导致轴范围震荡时，最多重试 5 次后放弃，防止无限循环。这是一种实用的启发式限制。
+
+---
+
+## 十一、实战参考
+
+| 主题 | Cookbook 入口 |
+|------|--------------|
+| 布局控制 | [Layout](https://scottplot.net/cookbook/5/Layout) |
+| 网格线 | [Customizing Grids](https://scottplot.net/cookbook/5/CustomizingGrids) |
+| 图例配置 | [Legend](https://scottplot.net/cookbook/5/Legend) |
+| Plottable 管理 | [Plottable Management](https://scottplot.net/cookbook/5/PlottableManagement) |
