@@ -1,23 +1,81 @@
 # ScottPlot 5 项目结构导航
 
-> 以 `src/ScottPlot5/` 为根目录 · 源码地图 · 2026-10-18
+> 以 `src/ScottPlot5/ScottPlot5.sln` 为准 · VS IDE 视角 · 附带物理路径 · 2026-10-18
 
 ---
 
-## 一、解决方案全景
+## 一、解决方案全景（VS 解决方案资源管理器视图）
+
+> **说明**：以下结构来自 `.sln` 文件的 `NestedProjects` 配置。  
+> 有图标 `📁` 的是 VS 虚拟文件夹（Solution Folder），无图标的是真实项目。  
+> `→` 后标注物理磁盘路径。
 
 ```
-src/ScottPlot5/
+Solution 'ScottPlot5'
 │
-├── ScottPlot5/                     ← 🔷 核心库（NuGet: ScottPlot）
-├── ScottPlot5 Controls/            ← 🔶 跨平台控件（8 个 NuGet 包）
-├── ScottPlot5 Cookbook/            ← 📖 示例代码生成器 → scottplot.net
-├── ScottPlot5 Demos/               ← 🎮 4 套演示程序
-├── ScottPlot5 Tests/               ← 🧪 测试项目
-├── ScottPlot5 Benchmarks/          ← ⏱  BenchmarkDotNet 性能测试
-├── .editorconfig
-└── Key.snk                         ← 强名称签名密钥
+├── 📄 ScottPlot                          → ScottPlot5/ScottPlot.csproj
+│
+├── 📁 Controls/                          (虚拟文件夹)
+│   ├── 📄 ScottPlot.WinForms             → ScottPlot5 Controls/ScottPlot.WinForms/
+│   ├── 📄 ScottPlot.WPF                  → ScottPlot5 Controls/ScottPlot.WPF/
+│   ├── 📄 ScottPlot.Avalonia             → ScottPlot5 Controls/ScottPlot.Avalonia/
+│   ├── 📄 ScottPlot.Eto                  → ScottPlot5 Controls/ScottPlot.Eto/
+│   ├── 📄 ScottPlot.WinUI                → ScottPlot5 Controls/ScottPlot.WinUI/
+│   ├── 📄 ScottPlot.OpenGL               → ScottPlot5 Controls/ScottPlot.OpenGL/
+│   ├── 📄 ScottPlot.Blazor               → ScottPlot5 Controls/ScottPlot.Blazor/
+│   └── 📄 ScottPlot.Maui                 → ScottPlot5 Controls/ScottPlot.Maui/
+│
+├── 📄 ScottPlot Cookbook                 → ScottPlot5 Cookbook/
+│
+├── 📁 Demo/                              (虚拟文件夹)
+│   ├── 📄 WinForms Demo                  → ScottPlot5 Demos/ScottPlot5 WinForms Demo/
+│   ├── 📄 WPF Demo                       → ScottPlot5 Demos/ScottPlot5 WPF Demo/
+│   ├── 📄 Avalonia Demo                  → ScottPlot5 Demos/Avalonia Demo/
+│   └── 📄 Sandbox.Blazor.WebAssembly    → ScottPlot5 Demos/ScottPlot5 Blazor/
+│
+├── 📄 ScottPlot Unit Tests               → ScottPlot5 Tests/Unit Tests/
+│
+├── 📁 Advanced Tests/                    (虚拟文件夹)
+│   ├── 📄 Benchmark                      → ScottPlot5 Benchmarks/
+│   └── 📄 Graphical Test Runner          → ScottPlot5 Tests/Graphical Test Runner/
+│
+├── 📁 Sandbox/                           (虚拟文件夹 · 不参与常规 Build)
+│   ├── 📄 Sandbox.Avalonia.Desktop       → ScottPlot5 Sandbox/
+│   ├── 📄 Sandbox.Blazor                 → ScottPlot5 Sandbox/
+│   ├── 📄 Sandbox.Console                → ScottPlot5 Sandbox/
+│   ├── 📄 Sandbox.Eto                    → ScottPlot5 Sandbox/
+│   ├── 📄 Sandbox.Maui                   → ScottPlot5 Sandbox/
+│   ├── 📄 Sandbox.UnoPlatform            → ScottPlot5 Sandbox/
+│   ├── 📄 Sandbox.WebApi                 → ScottPlot5 Sandbox/
+│   ├── 📄 Sandbox.WinForms               → ScottPlot5 Sandbox/
+│   ├── 📄 Sandbox.WinForms3D             → ScottPlot5 Sandbox/
+│   ├── 📄 Sandbox.WinFormsFinance        → ScottPlot5 Sandbox/
+│   ├── 📄 Sandbox.WinUI.Desktop          → ScottPlot5 Sandbox/
+│   └── 📄 Sandbox.WPF                    → ScottPlot5 Sandbox/
+│
+├── 📁 Dev/                               (虚拟文件夹 · 解决方案级文件)
+│   └── 📄 CHANGELOG.md                   → ../../CHANGELOG.md
+│
+├── 📄 .editorconfig
+└── 📄 Key.snk
 ```
+
+### 为什么 VS 中看到的和磁盘目录不一样？
+
+VS 的 Solution Explorer 使用 **Solution Folder**（虚拟文件夹）来分组项目，这只在 `.sln` 文件中定义，和物理磁盘目录无关。上面的结构就是精解 `.sln` 中 `NestedProjects` 的映射关系。
+
+例如磁盘上的 `ScottPlot5 Controls/` 下有 9 个子目录，但在 VS 中它们被折叠到虚拟 `Controls/` 文件夹下，且不显示中间目录名。
+
+### 各虚拟文件夹用途
+
+| VS 文件夹 | 项目数 | 用途 |
+|----------|--------|------|
+| **Controls/** | 8 | 跨平台 GUI 控件，发布为 8 个独立 NuGet 包 |
+| **Demo/** | 4 | 演示程序/交互式手册 |
+| **Advanced Tests/** | 2 | 性能测试 + 图形化测试运行器 |
+| **Sandbox/** | 12 | 开发调试用沙盒，不参与解决方案 Build |
+| **Dev/** | 1 | 引入 CHANGELOG.md 等根级文件到 VS |
+| *(根级)* | 3 | 核心库 + Cookbook + 单元测试 |
 
 ---
 
@@ -417,32 +475,34 @@ IO/ (1)                   BitmapHeader
 
 ---
 
-## 四、控件项目 `ScottPlot5 Controls/`
+## 四、VS 文件夹 `Controls/` — 跨平台控件（8 个项目）
 
-> 详细参考：`learning/07-controls/controls-architecture.md`
+> 详细参考：`learning/07-controls/controls-architecture.md`  
+> 物理路径：`ScottPlot5 Controls/` · VS 中折叠于 `Controls/` 虚拟文件夹
 
-```
-ScottPlot5 Controls/
-├── ScottPlot.WinForms/     NuGet: ScottPlot.WinForms
-│   FormsPlot, FormsPlotGL, FormsPlotMenu, FormsPlotViewer, ...
-├── ScottPlot.WPF/          NuGet: ScottPlot.WPF
-│   WpfPlot, WpfPlotGL, WpfPlotMenu, WpfPlotViewer, ...
-├── ScottPlot.Avalonia/     NuGet: ScottPlot.Avalonia
-│   AvaPlot, AvaPlotMenu, ...
-├── ScottPlot.Blazor/       NuGet: ScottPlot.Blazor
-│   BlazorPlot.razor, BlazorPlotGL.razor, BlazorPlotMenu, ...
-├── ScottPlot.Eto/          NuGet: ScottPlot.Eto
-│   EtoPlot, EtoPlotMenu, ...
-├── ScottPlot.Maui/         NuGet: ScottPlot.Maui
-│   MauiPlot, MauiPlotMenu, Platforms/{Android,iOS,MacCatalyst,Tizen,Windows}
-├── ScottPlot.WinUI/        NuGet: ScottPlot.WinUI
-│   WinUIPlot, WinUIPlotMenu, ...
-├── ScottPlot.OpenGL/       NuGet: ScottPlot.OpenGL
-│   ScatterGL, ScatterGLCustom, GLPrograms/ (12 个 Shader 文件)
-└── ScottPlot.GLControl     （在核心库中，非独立 NuGet）
-```
+| VS 项目名 | NuGet 包 | 物理路径 |
+|----------|---------|---------|
+| **ScottPlot.WinForms** | ScottPlot.WinForms | `ScottPlot5 Controls/ScottPlot.WinForms/` |
+| **ScottPlot.WPF** | ScottPlot.WPF | `ScottPlot5 Controls/ScottPlot.WPF/` |
+| **ScottPlot.Avalonia** | ScottPlot.Avalonia | `ScottPlot5 Controls/ScottPlot.Avalonia/` |
+| **ScottPlot.Blazor** | ScottPlot.Blazor | `ScottPlot5 Controls/ScottPlot.Blazor/` |
+| **ScottPlot.Eto** | ScottPlot.Eto | `ScottPlot5 Controls/ScottPlot.Eto/` |
+| **ScottPlot.Maui** | ScottPlot.Maui | `ScottPlot5 Controls/ScottPlot.Maui/` |
+| **ScottPlot.WinUI** | ScottPlot.WinUI | `ScottPlot5 Controls/ScottPlot.WinUI/` |
+| **ScottPlot.OpenGL** | ScottPlot.OpenGL | `ScottPlot5 Controls/ScottPlot.OpenGL/` |
 
-**统一模式**（每个控件 ~80 行核心代码）：
+每个控件项目核心文件（~80 行代码）：
+
+| 文件 | 职责 |
+|------|------|
+| `*Plot.cs` | `IPlotControl` 实现：事件转发、渲染触发、重置逻辑 |
+| `*PlotMenu.cs` | `IPlotMenu` 实现：默认右键菜单 |
+| `*PlotGL.cs`（部分） | OpenGL 加速变体 |
+| `*PlotViewer.cs`（部分）| 独立图表查看窗口 |
+
+OpenGL 控件额外包含 `GLPrograms/` 目录（12 个 Shader 源码）。
+
+**统一模式**：
 
 ```
 平台事件 → UserInputProcessor.Process(action)
@@ -453,64 +513,144 @@ ScottPlot5 Controls/
 
 ---
 
-## 五、测试与工具项目
+## 五、根级项目（3 个独立项目）
 
-### 5.1 测试
+### 5.1 `ScottPlot` — 核心库
 
-```
-ScottPlot5 Tests/
-│
-├── Unit Tests/
-│   ├── UnitTests/PrimitiveTests/         ← 原子类型测试
-│   ├── UnitTests/TickGenerators/         ← 刻度生成器测试
-│   ├── RenderTests/
-│   │   ├── Figure/                       ← 整图对比测试
-│   │   ├── Plottable/                    ← 各 Plottable 渲染测试
-│   │   ├── AutoScale/Layout/Legend/...   ← 子系统测试
-│   ├── InteractivityTests/
-│   │   ├── UserInputActionTests/         ← 8 种响应器独立测试
-│   │   └── KeyboardStateTests
-│   ├── CodeTests/                        ← 代码规范检查
-│   ├── FontTests/                        ← 字体检测/测量
-│   ├── Statistics/                       ← 统计算法测试
-│   └── TestImages/                       ← 测试用图片资源
-│
-└── Graphical Test Runner/                ← WinForms 可视化结果对比
-```
+> 物理路径：`ScottPlot5/` · 内部结构见本文第二~三章
 
-### 5.2 其他工具项目
+NuGet 包名 `ScottPlot`，5 个目标框架（`net462/netstandard2.0/net8.0/net9.0/net10.0`）。
 
-| 项目 | 用途 |
-|------|------|
-| `ScottPlot5 Cookbook/` | 扫描 Plottable → 生成 500+ 带截图示例 → 输出网站 |
-| `ScottPlot5 Demos/` | 4 套演示程序 |
-| `ScottPlot5 Benchmarks/` | BenchmarkDotNet 性能基准测试 |
+### 5.2 `ScottPlot Cookbook` — 示例代码生成器
 
-#### Demo 程序明细
+> 物理路径：`ScottPlot5 Cookbook/`
+
+自动扫描 Plottable → 生成 500+ 带截图的 HTML 示例页 → 输出到 `scottplot.net` 网站。拥有独立 `IRecipe` 接口，每个 Plottable 配多个 Recipe 文件。
+
+### 5.3 `ScottPlot Unit Tests` — 单元测试
+
+> 物理路径：`ScottPlot5 Tests/Unit Tests/`
 
 ```
-ScottPlot5 Demos/
-├── Avalonia Demo/            ← Avalonia 演示（MVVM 架构）
-│   ├── Demos/                ← 40+ 个独立 Demo 窗口
-│   ├── ViewModels/           ← MVVM ViewModel 层
-│   └── Views/                ← MVVM View 层
-├── ScottPlot5 WinForms Demo/ ← WinForms 演示
-│   └── Demos/                ← 多套 .Designer/.resx 演示窗体
-├── ScottPlot5 WPF Demo/      ← WPF 演示
-│   └── DemoWindows/          ← DisplayScaling, MultiThreading, Quickstart
-└── ScottPlot5 Blazor/        ← Blazor WebAssembly 演示
-    ├── Pages/                ← Quickstart, Recipe, Signal
-    ├── Services/             ← IRecipesService, IResizeService
-    └── wwwroot/              ← 静态资源（Bootstrap, highlight.js, OpenIconic）
+ScottPlot5 Tests/Unit Tests/
+├── UnitTests/PrimitiveTests/         ← 原子类型测试
+├── UnitTests/TickGenerators/         ← 刻度生成器测试
+├── RenderTests/
+│   ├── Figure/                       ← 整图对比测试
+│   ├── Plottable/                    ← 各 Plottable 渲染测试
+│   ├── AutoScale/Layout/Legend/...   ← 子系统测试
+├── InteractivityTests/
+│   ├── UserInputActionTests/         ← 8 种响应器独立测试
+│   └── KeyboardStateTests
+├── CodeTests/                        ← 代码规范检查
+├── FontTests/                        ← 字体检测/测量
+├── Statistics/                       ← 统计算法测试
+└── TestImages/                       ← 测试用图片资源
 ```
 
 ---
 
-## 六、导航速查
+## 六、VS 文件夹 `Demo/` — 演示程序（4 个项目）
 
-### "我想找..."
+> 物理路径：`ScottPlot5 Demos/` · VS 中折叠于 `Demo/` 虚拟文件夹
 
-| 问题 | 路径 |
+| VS 项目名 | 框架 | 物理路径 |
+|----------|------|---------|
+| **WinForms Demo** | WinForms | `ScottPlot5 Demos/ScottPlot5 WinForms Demo/` |
+| **WPF Demo** | WPF | `ScottPlot5 Demos/ScottPlot5 WPF Demo/` |
+| **Avalonia Demo** | Avalonia MVVM | `ScottPlot5 Demos/Avalonia Demo/` |
+| **Sandbox.Blazor.WebAssembly** | Blazor WASM | `ScottPlot5 Demos/ScottPlot5 Blazor/` |
+
+### Avalonia Demo 内部结构
+
+```
+Avalonia Demo/
+├── Demos/                ← 40+ 个独立 Demo 窗口
+├── ViewModels/           ← MVVM ViewModel 层
+└── Views/                ← MVVM View 层
+```
+
+### WinForms Demo 内部结构
+
+```
+ScottPlot5 WinForms Demo/
+└── Demos/                ← 多套 .Designer/.resx 演示窗体
+```
+
+### WPF Demo 内部结构
+
+```
+ScottPlot5 WPF Demo/
+└── DemoWindows/          ← DisplayScaling, MultiThreading, Quickstart
+```
+
+### Blazor Demo 内部结构
+
+```
+ScottPlot5 Blazor/
+├── Pages/                ← Quickstart, Recipe, Signal
+├── Services/             ← IRecipesService, IResizeService
+└── wwwroot/              ← 静态资源（Bootstrap, highlight.js, OpenIconic）
+```
+
+---
+
+## 七、VS 文件夹 `Advanced Tests/` — 高级测试（2 个项目）
+
+| VS 项目名 | 用途 | 物理路径 |
+|----------|------|---------|
+| **Benchmark** | BenchmarkDotNet 性能基准测试 | `ScottPlot5 Benchmarks/` |
+| **Graphical Test Runner** | WinForms 可视化测试结果对比 | `ScottPlot5 Tests/Graphical Test Runner/` |
+
+---
+
+## 八、VS 文件夹 `Sandbox/` — 开发沙盒（12 个项目）
+
+> 不参与解决方案默认 Build，仅用于开发调试。  
+> 物理路径：`ScottPlot5 Sandbox/`
+
+| VS 项目名 | 框架/平台 |
+|----------|----------|
+| **Sandbox.Avalonia.Desktop** | Avalonia 桌面 |
+| **Sandbox.Blazor** | Blazor |
+| **Sandbox.Console** | 控制台 |
+| **Sandbox.Eto** | Eto.Forms |
+| **Sandbox.Maui** | .NET MAUI |
+| **Sandbox.UnoPlatform** | Uno Platform |
+| **Sandbox.WebApi** | ASP.NET Core Web API |
+| **Sandbox.WinForms** | WinForms |
+| **Sandbox.WinForms3D** | WinForms + 3D 实验 |
+| **Sandbox.WinFormsFinance** | WinForms + 金融图表实验 |
+| **Sandbox.WinUI.Desktop** | WinUI 3 桌面 |
+| **Sandbox.WPF** | WPF |
+
+---
+
+## 九、VS 文件夹 `Dev/` — 开发辅助文件
+
+引入仓库根的 `CHANGELOG.md` 到 VS 解决方案视图中，方便开发者快速查看。
+
+---
+
+## 十、导航速查
+
+### "我想找..."（从 VS 视角）
+
+| 问题 | VS 中位置 | 物理路径 |
+|------|----------|---------|
+| VS 解决方案结构定义 | 📁 Controls/Demo/Sandbox/... | `ScottPlot5.sln` → `NestedProjects` |
+| 解决方案 Build 配置 | 解决方案 → 右键 → 配置管理器 | `ScottPlot5.sln` → `SolutionConfigurationPlatforms` |
+| 平台控件源码 | 📁 Controls → 双击项目 | `ScottPlot5 Controls/` |
+| 演示程序源码 | 📁 Demo → 双击项目 | `ScottPlot5 Demos/` |
+| 单元测试 | 根级 → ScottPlot Unit Tests | `ScottPlot5 Tests/Unit Tests/` |
+| 性能基准测试 | 📁 Advanced Tests → Benchmark | `ScottPlot5 Benchmarks/` |
+| 图形化测试 | 📁 Advanced Tests → Graphical Test Runner | `ScottPlot5 Tests/Graphical Test Runner/` |
+| 开发沙盒 | 📁 Sandbox → 选择对应平台 | `ScottPlot5 Sandbox/` |
+| CHANGELOG | 📁 Dev → CHANGELOG.md | `../../CHANGELOG.md` |
+
+### "我想找..."（从核心库源码视角）
+
+| 问题 | 路径（相对于 `ScottPlot5/`） |
 |------|------|
 | `Plot.Add.Scatter()` 怎么实现的？ | `PlottableAdder.cs` |
 | 渲染管道怎么插入步骤？ | `Rendering/RenderManager.cs` → `RenderActions[]` |
