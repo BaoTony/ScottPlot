@@ -1,6 +1,6 @@
 # ScottPlot 5 交互系统架构剖析
 
-> 职责：交互系统深度剖析 — UserInputProcessor 责任链 · 13 个响应器 · IsPrimary 独占机制
+> 职责：交互系统深度剖析 — UserInputProcessor 责任链 · 10 个响应器 · IsPrimary 独占机制
 
 ---
 
@@ -31,7 +31,7 @@
 │    │ ③ 第一个匹配的响应器执行 → 可能修改 Plot → Refresh()     │
 │    │                                                          │
 │    ▼                                                          │
-│  UserActionResponses[] (可插拔响应器列表, 默认注册 10/13)      │
+│  UserActionResponses[] (可插拔响应器列表, 默认注册 10 个)    │
 │    ├── MouseInteractWithPlottables ← 左键拖拽交互标记 (优先)   │
 │    ├── MouseDragZoomRectangle ← 中键拖拽矩形缩放               │
 │    ├── MouseDragPan           ← 左键拖拽平移                  │

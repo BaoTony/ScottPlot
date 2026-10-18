@@ -7,27 +7,6 @@
 ## 数据流视角
 
 ```
-control.Refresh()  plot.SavePng()  plot.Render(canvas, rect)
-        │                │                │
-        └────────────────┼────────────────┘
-                         ▼
-              RenderManager.Render(canvas, rect)
-                │
-                ├─ 最多重试 5 次（轴范围连续变化时自动重渲染）
-                └─ RenderOnce(canvas, rect):
-                     using RenderPack rp = new(Plot, rect, canvas)
-                     foreach IRenderAction in RenderActions  ← 25 步顺序执行
-                       CanvasState.Save() → action.Render(rp) → RestoreAll()
-                     → 构建 RenderDetails
-                     → 触发 RenderFinished → SizeChanged → AxisLimitsChanged
-```
-
----
-
-## 一、架构概览
-
-```
-
 ┌─────────────────────────────────────────────────────────────┐
 │                     渲染管道架构                              │
 ├─────────────────────────────────────────────────────────────┤
@@ -61,7 +40,7 @@ control.Refresh()  plot.SavePng()  plot.Render(canvas, rect)
 
 ---
 
-## 二、IRenderAction 接口
+## 一、IRenderAction 接口
 
 ```csharp
 public interface IRenderAction
@@ -74,7 +53,7 @@ public interface IRenderAction
 
 ---
 
-## 三、RenderPack — 单次渲染的上下文
+## 二、RenderPack — 单次渲染的上下文
 
 ```csharp
 public class RenderPack(Plot plot, PixelRect figureRect, SKCanvas canvas) : IDisposable
@@ -95,7 +74,7 @@ public class RenderPack(Plot plot, PixelRect figureRect, SKCanvas canvas) : IDis
 
 ---
 
-## 四、25 步渲染序列详解
+## 三、25 步渲染序列详解
 
 ```
 序号  RenderAction                     核心职责                    输入         输出
@@ -131,7 +110,7 @@ public class RenderPack(Plot plot, PixelRect figureRect, SKCanvas canvas) : IDis
 
 ---
 
-## 五、关键 RenderAction 深入
+## 四、关键 RenderAction 深入
 
 ### 5.1 AutoScaleUnsetAxes（步骤4）
 
@@ -256,7 +235,7 @@ public void Render(RenderPack rp)
 
 ---
 
-## 六、自动重渲染机制
+## 五、自动重渲染机制
 
 ```csharp
 public void Render(SKCanvas canvas, PixelRect rect)
@@ -276,7 +255,7 @@ public void Render(SKCanvas canvas, PixelRect rect)
 
 ---
 
-## 七、事件系统
+## 六、事件系统
 
 ```
 RenderManager 事件:
@@ -291,7 +270,7 @@ RenderManager 事件:
 
 ---
 
-## 八、OpenGL 支持路径
+## 七、OpenGL 支持路径
 
 ```
 IPlottableGL 接口 (继承 IPlottable):
@@ -311,7 +290,7 @@ GL 相关 RenderActions:
 
 ---
 
-## 九、自定义渲染步骤
+## 八、自定义渲染步骤
 
 ```csharp
 // 方式1: 在指定位置插入自定义动作
@@ -327,7 +306,7 @@ plot.RenderManager.RenderActions.AddRange([...]);
 
 ---
 
-## 十、性能计时与基准测试
+## 九、性能计时与基准测试
 
 每个 `RenderOnce` 调用都会记录每步的耗时：
 
@@ -346,7 +325,7 @@ RenderDetails (readonly struct):
 
 ---
 
-## 十一、关键设计洞察
+## 十、关键设计洞察
 
 1. **策略模式管道的极致实践**：`List<IRenderAction>` 是可插拔的渲染管道，每个步骤职责单一、可增删改。这是"开闭原则"在渲染系统中的完美体现。
 
