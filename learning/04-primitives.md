@@ -11,15 +11,15 @@ Primitives 是 ScottPlot 的**原子层**，所有高级组件(Plottable、Rende
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    Primitives 层全景 (109 files)                      │
+├─────────────────────────────────────────────────────────────────────┤
+│  按声明形式分类（实测）：37 struct · 3 record struct · 46 class        │
+│  · 2 interface (IAutoScaler, IAxisLimitManager) · 21 enum = 109       │
 ├───────────────┬──────────────┬──────────────┬──────────────────────┤
 │ 坐标/几何     │ 样式系统     │ 颜色系统     │ 轴与范围             │
-│ (15 types)    │ (18 types)   │ (70+ types)  │ (12 types)           │
 ├───────────────┼──────────────┼──────────────┼──────────────────────┤
 │ 数据承载      │ 布局/对齐   │ 图例         │ 渲染元数据            │
-│ (6 types)     │ (6 types)    │ (4 types)    │ (8 types)            │
 ├───────────────┼──────────────┼──────────────┼──────────────────────┤
 │ 交互/事件     │ 特效         │ 统计         │ 其他                  │
-│ (3 types)     │ (5 types)    │ (7 types)    │ (20+ types)          │
 └───────────────┴──────────────┴──────────────┴──────────────────────┘
 ```
 
@@ -229,7 +229,7 @@ public readonly struct Color
 ```csharp
 public static class Colors
 {
-    // 140+ 预设颜色 (W3C CSS 颜色名)
+    // 161 个预设颜色 (W3C CSS 颜色名，实测 Primitives/Colors.cs 静态属性数)
     static Color Red => new(255, 0, 0);
     static Color Blue => new(0, 0, 255);
     static Color Transparent => new(0, 0, 0, 0);
@@ -254,8 +254,9 @@ IColormap 接口:
 ├── 地形学:   Topo, Turbid, Solar, Delta, Phase
 ├── 灰度:     Grayscale, GrayscaleReversed
 ├── 装饰器:   Reversed, Inverted, InvertedHue
-└── 其他:     Amp, Balance, Blues, Greens, Curl, Dense, Diff,
-               Matter, MellowRainbow, Oxy, Speed, Tarn, Tempo, Algae
+├── 其他:     Amp, Balance, Blues, Greens, Curl, Dense, Diff,
+│              Matter, MellowRainbow, Oxy, Speed, Tarn, Tempo, Algae
+└── 自定义:   Custom, CustomInterpolated, CustomPalette（共 38 个，含自定义基类）
 
 Colormap 工厂方法:
   Colormap.FromColors(Color[], bool smooth)   → 自定义色图
@@ -271,11 +272,10 @@ IPalette 接口:
   int Count
 
 26种 Palette (ScottPlot.Palettes):
-  Category10, Category20, ColorblindFriendly, ColorblindFriendlyDark,
-  Dark, DarkPastel, LightOcean, LightSpectrum, Microcharts, Nero,
-  Nord, Normal, OneHalf, OneHalfDark, PastelWheel, Penumbra,
-  PolarNight, Redness, SnowStorm, SummerSplash, Tsitsulin,
-  Amber, Aurora, Building, Frost
+  Amber, Aurora, Building, Category10, Category20, ColorblindFriendly,
+  ColorblindFriendlyDark, Custom, Dark, DarkPastel, Frost, LightOcean,
+  LightSpectrum, Microcharts, Nero, Nord, Normal, OneHalf, OneHalfDark,
+  PastelWheel, Penumbra, PolarNight, Redness, SnowStorm, SummerSplash, Tsitsulin
 
 使用: Plot.Add.Palette = new Palettes.Nord();
      → 每次 Add.Scatter() 自动取下一个颜色
@@ -307,13 +307,12 @@ Legend (class)
 ├── ILegendLayout     ← 布局策略（可自定义）
 └── Render(RenderPack)
 
-LegendItem (class) — 实现了 6 个样式接口
+LegendItem (class) — 实现了 5 个样式接口（另继承 LabelStyleProperties）
 ├── IHasLine        → LineStyle
 ├── IHasMarker      → MarkerStyle
 ├── IHasFill        → FillStyle
 ├── IHasArrow       → ArrowStyle
-├── IHasLabel       → LabelStyle
-└── IHasOutline     → OutlineStyle
+└── IHasLabel       → LabelStyle
 ```
 
 ---
@@ -322,19 +321,19 @@ LegendItem (class) — 实现了 6 个样式接口
 
 这些 struct/class 是 Plottable 构造方法接收的参数类型：
 
-| 类型 | 用途 | Plottable |
+| 类型 | 用途 | Plottable（实际类名） |
 |---|---|---|
 | `Bar` | 单条柱 (Position, Value, Error...) | BarPlot |
 | `BarSeries` | 柱状图系列 | BarPlot (多系列) |
 | `Box` | 箱线图数据 (Min, Q1, Median, Q3, Max, Outliers) | BoxPlot |
-| `OHLC` | K线数据 (Open, High, Low, Close, DateTime) | Candlestick / OHLC |
-| `PieSlice` | 饼图片 (Value, Label, Color, ExplodedFraction) | PiePlot |
+| `OHLC` | K线数据 (Open, High, Low, Close, DateTime) | CandlestickPlot / OhlcPlot |
+| `PieSlice` | 饼图片 (Value, Label, Color, ExplodedFraction) | Pie / Coxcomb |
 | `DataPoint` | 带索引的数据点 (X, Y, Index) | 触摸/最近点查询结果 |
 | `PolarCoordinates` | 极坐标点 (Radius, Angle) | Polar 系 Plottables |
-| `RadarSeries` | 雷达图系列 | RadarPlot |
-| `Population` | 统计总体 (Values[]) | PopulationPlot |
-| `ContourLine` | 等值线 (List<Coordinates>) | ContourPlot |
-| `Vector` | 矢量 (Root, Magnitude, Angle) | VectorField |
+| `RadarSeries` | 雷达图系列 | Radar |
+| `Population` | 统计总体 (Values[]) | PopulationSymbol |
+| `ContourLine` | 等值线 (List<Coordinates>) | ContourLines |
+| `RootedCoordinateVector` | 带根点的矢量 | VectorField |
 
 ---
 
@@ -347,14 +346,14 @@ Alignment (enum)
 └── LowerLeft     LowerCenter     LowerRight
 
 Edge (enum)             ← 四边: Left, Right, Bottom, Top
-Location (readonly struct) ← 精确坐标+对齐
+Location (class)        ← 精确坐标+对齐（注意：是引用类型，非 struct）
 LocationUnit (enum)     ← Unspecified / Coordinates / Pixel
 
-Layout (class)          ← 管理 Figure/Data/Legend 等区域的布局计算
+Layout (readonly struct) ← 布局计算结果快照（Primitives/Layout.cs）
   ├── FigureRect        ← 图表总区域
   ├── DataRect          ← 数据绘制区
-  ├── LegendRect        ← 图例区
-  └── PanelSizes        ← 面板占用空间 (轴标签/标题/刻度)
+  ├── PanelSizes        ← 各面板占用空间 (轴标签/标题/刻度)
+  └── PanelOffsets      ← 各面板相对数据区边缘的偏移
 
 PixelPadding (struct)   ← 内边距 (Left, Right, Bottom, Top)
 FractionRect (struct)   ← 百分比矩形 (0-1 归一化)
@@ -369,10 +368,12 @@ RenderDetails (readonly struct)
 ├── FigureRect, DataRect, Padding   ← 渲染区域
 ├── Elapsed, TimedActions[]         ← 渲染耗时 (每步)
 ├── AxisLimits, PreviousAxisLimits  ← 轴范围 (用于检测变化)
-├── AxisLimitsByAxis (Dictionary)   ← 所有轴的范围
+├── AxisLimitsByAxis, PreviousAxisLimitsByAxis
+│                                    ← 所有轴的范围 (Dictionary<IAxis, CoordinateRange>)
+├── Layout                          ← 本次渲染的布局快照
 ├── SizeChanged                     ← 画布尺寸是否变化
 ├── AxisLimitsChanged               ← 轴范围是否变化
-└── Count + Total                     ← 渲染计数
+└── Count                           ← 渲染总计数（每次渲染 +1）
 
 Tick (readonly struct)
 ├── Position (double)               ← 轴上的坐标位置
@@ -396,9 +397,8 @@ public class CanvasState(SKCanvas canvas)
     Save()          // canvas.Save() + 计数器
     Restore()       // canvas.Restore() + 校验 (Save/Restore 配对)
     RestoreAll()    // 重置到初始状态
-    Translate()     // canvas.Translate()
-    Rotate()        // canvas.Rotate()
-    Scale()         // canvas.Scale()
+    Translate()     // canvas.Translate()（float 与 Pixel 两个重载）
+    RotateDegrees() / RotateRadians()   // canvas.Rotate()（按度/弧度两个重载族）
     Clip()          // canvas.ClipRect()
     DisableClipping()
 }

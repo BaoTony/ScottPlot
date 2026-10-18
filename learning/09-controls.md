@@ -1,6 +1,6 @@
 # ScottPlot 5 跨平台控件与多图系统
 
-> 8 个 NuGet 包 · 8 套平台控件 · IPlotControl + IPlotMenu + IMultiplot · ~3,500 行核心
+> 8 个控件包（7 套平台控件 + 1 个 GPU 扩展）· 39 个 .cs · ~3,000 行 · IPlotControl + IPlotMenu + IMultiplot
 
 ---
 
@@ -22,7 +22,7 @@ src/ScottPlot5/
     └── ScottPlot.OpenGL/            → NuGet: ScottPlot.OpenGL  (GPU 加速扩展)
 ```
 
-每个包只有 **2~5 个 .cs 源文件**，各平台代码高度对称。
+每个包只有 **3~11 个 .cs 源文件**（WinForms 11、WPF 7、其余 3~4），各平台代码高度对称。
 
 ---
 
@@ -33,17 +33,23 @@ src/ScottPlot5/
 ```csharp
 public interface IPlotControl
 {
-    Plot Plot { get; }                           // 核心 Plot 对象
-    IMultiplot Multiplot { get; set; }           // 多图管理器
-    void Refresh();                              // 触发布局+渲染
+    Plot Plot { get; }                             // 核心 Plot 对象
+    IMultiplot Multiplot { get; set; }             // 多图管理器
+    void Refresh();                                // 触发布局+渲染
     UserInputProcessor UserInputProcessor { get; } // 交互处理器
-    IPlotMenu? Menu { get; set; }                // 右键菜单
-    GRContext? GRContext { get; }                // OpenGL 上下文（null = 不支持）
-    float DisplayScale { get; set; }             // HiDPI 缩放系数
+    IPlotMenu? Menu { get; set; }                  // 右键菜单
+    void ShowContextMenu(Pixel position);          // 弹出菜单
+    GRContext? GRContext { get; }                  // OpenGL 上下文（null = 不支持）
+    float DisplayScale { get; set; }               // HiDPI 缩放系数
+    float DetectDisplayScale();                    // 检测 DPI（开销大，勿频繁调用）
+    void Reset();                                  // 释放当前 Plot 并新建
+    void Reset(Plot plot);                         // 热替换 Plot 对象
+    void SetCursor(Cursor cursor);                 // 应用平台光标
 }
+// 扩展方法: GetPlotAtPixel(pixel) → 经 Multiplot.LastRender 查找像素下的 Plot
 ```
 
-**设计价值**：所有八套平台控件都实现这个接口，`UserInputProcessor` 和 `RenderManager` 只需依赖 `IPlotControl`，完全不知道自己在哪个平台运行。
+**设计价值**：所有七套平台控件都实现这个接口（ScottPlot.OpenGL 不实现——它是 Plottable 扩展包），`UserInputProcessor` 和 `RenderManager` 只需依赖 `IPlotControl`，完全不知道自己在哪个平台运行。
 
 ### 2.2 IPlotMenu — 右键菜单统一接口
 
@@ -76,14 +82,14 @@ Blazor 的菜单实现是空壳（浏览器环境不支持原生菜单）。
 | 特性 | WinForms | WPF | Avalonia | Blazor | MAUI | WinUI | Eto |
 |---|---|---|---|---|---|---|---|
 | **基类** | `UserControl` | `Control` | `Control` | `ComponentBase` | `SKCanvasView` | `UserControl` | `Drawable` |
-| **SkiaSharp 承载** | `SKControl` | `SKElement` | `ICustomDrawOp` | JS Canvas | `SKCanvasView` | `SKXamlCanvas` | `SKSurface` |
+| **SkiaSharp 承载** | `TransparentSKControl` | `SKElement` | `ICustomDrawOp` | JS Canvas | `SKCanvasView` | `SKXamlCanvas` | `SKSurface` |
 | **渲染方式** | OnPaintSurface | OnPaintSurface | DrawOp.Render | PaintSurface | OnPaintSurface | PaintSurface | OnPaint (bitmap) |
 | **HiDPI** | DeviceDpi | VisualTreeHelper | RenderScaling | 1.0 (TODO) | 1.0 (固定) | XamlRoot.RasterizationScale | LogicalPixelSize |
 | **设计时支持** | ✅ 替代视图 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **右键菜单** | FormsPlotMenu | WpfPlotMenu | AvaPlotMenu | 空壳 | MauiPlotMenu | WinUIPlotMenu | EtoPlotMenu |
 | **触摸手势** | ❌ | ❌ | ❌ | ❌ | ✅ Pan/Pinch | ❌ | ❌ |
 | **子控件封装** | FormsPlot/FormsPlotGL | WpfPlot/WpfPlotGL | AvaPlot | BlazorPlot/BlazorPlotGL | MauiPlot | WinUIPlot | EtoPlot |
-| **TargetFrameworks** | net8.0+net10.0 | net8.0+net10.0 | net8.0+net10.0 | net8.0+net10.0 | net8.0+net10.0 | net10.0 | net8.0+net10.0 |
+| **TargetFrameworks** | net462+net8.0-windows+net10.0-windows | net462+net8.0-windows+net10.0-windows | net8.0+net10.0 | net8.0+net10.0 | net10.0+移动端 | net10.0 系列 | net8.0+net10.0 |
 
 ---
 
@@ -92,7 +98,7 @@ Blazor 的菜单实现是空壳（浏览器环境不支持原生菜单）。
 ### WinForms
 
 ```csharp
-public class FormsPlotBase : UserControl, IPlotControl
+public abstract class FormsPlotBase : UserControl, IPlotControl
 {
     // 构造
     public FormsPlotBase() {
@@ -111,7 +117,7 @@ public class FormsPlotBase : UserControl, IPlotControl
 ### WPF
 
 ```csharp
-public class WpfPlotBase : Control, IPlotControl
+public abstract class WpfPlotBase : Control, IPlotControl
 {
     // 构造（同上，①②③④⑤）
     public WpfPlotBase() { /* ... */ }
@@ -260,8 +266,9 @@ public static ScatterGL ScatterGL(this PlottableAdder add,
 }
 
 // 使用条件：
-// ① 控件提供 GL 上下文（GRContext != null）
-// ② 控件继承 FormsPlotGL（仅 WinForms）
+// ① 控件提供 GL 上下文 (GRContext != null)
+// ② 控件须用 GL 变体: FormsPlotGL (WinForms) / WpfPlotGL (WPF) / BlazorPlotGL (Blazor)
+//    (另有 ScatterGLCustom 扩展, 同样位于 ScottPlot.OpenGL)
 ```
 
 **架构位置**：OpenGL 包位于 `ScottPlot5 Controls/` 下，但它不实现 `IPlotControl`，而是作为 `PlottableAdder` 的扩展方法，为 `IPlotControl` 添加 GPU 加速的 Plottable。
@@ -294,8 +301,10 @@ Multiplot.Render(canvas, figureRect)
     ├─ PreRenderActions.Invoke()
     │     → 用户注册的渲染前钩子
     │
+    ├─ canvas.Clear()
+    │
     ├─ Layout.GetSubplotRectangles(Subplots, figureRect)
-    │     → 布局策略 (Rows ← 默认, Grid, Columns, Custom)
+    │     → 布局策略 (Rows ← 默认, Grid, Columns, CustomGrid)
     │     → 返回 PixelRect[] 分配给每个子图
     │
     └─ foreach plot in Subplots:
@@ -307,12 +316,14 @@ Multiplot.Render(canvas, figureRect)
 ### 使用方式
 
 ```csharp
-// 方式1: 双图
-mp.AddSubplot(plot1, xFraction: 0, x: 0, y: 0, width: 1, height: 1);
-mp.AddSubplot(plot2, xFraction: 1, x: 2, y: 0, width: 1, height: 1);
+// 方式1: 双图（AddPlot 是 IMultiplot 的扩展方法）
+var mp = new Multiplot();
+mp.AddPlot(plot1);
+mp.AddPlot(plot2);
+mp.Layout = new MultiplotLayouts.Rows();   // 上下排列（默认布局）
 
 // 方式2: 2x2 网格
-mp = new Multiplot(plots) { Layout = new Grid(rows: 2, columns: 2) };
+mp = new Multiplot() { Layout = new MultiplotLayouts.Grid(rows: 2, columns: 2) };
 
 // 方式3: 共享轴
 mp.SharedAxes.ShareX([plot1, plot2]);  // 两图共享X轴
@@ -338,11 +349,12 @@ mp.SharedAxes.ShareX([plot1, plot2]);  // 两图共享X轴
   → RenderManager.Render(canvas, rect)         ← 25 步渲染管道
 
 Reset(newPlot)  ← 热替换 Plot 对象
-  → 旧 Plot.Dispose()
-  → Plot = newPlot
-  → newPlot.PlotControl = this                 // 更新反向引用
+  → oldPlot = Plot; Plot = newPlot
+  → oldPlot?.Dispose()                    // 释放旧 Plot
+  → newPlot.PlotControl = this            // 更新反向引用
+  → UserInputProcessor.Reset()            // 重建默认响应器列表
   → Multiplot.Reset(newPlot)
-  → Refresh()
+  // 注意: Reset 不主动调用 Refresh(), 由调用方决定何时重绘
 ```
 
 ---
@@ -388,4 +400,4 @@ float DetectDisplayScale() => XamlRoot.RasterizationScale;
 
 6. **MAUI 的手势适配**：桌面（Desktop idiom）和移动端使用完全不同的交互路径——桌面用 `SKTouchEventArgs`（模拟鼠标），移动端用 `PinchGestureRecognizer` + `PanGestureRecognizer`。`UserInputProcessor` 需要分别承载 `ProcessPanUpdated` 和 `ProcessPinchUpdated`。
 
-7. **布局可插拔**：`IMultiplotLayout` 定义了布局策略接口，`Rows`、`Grid`、`Columns` 都是实现。用户可以传入自定义布局器实现完全自由的子图排列。
+7. **布局可插拔**：`IMultiplotLayout` 定义了布局策略接口，`Rows`（默认）、`Grid`、`Columns`、`CustomGrid` 都是实现。用户可以传入自定义布局器实现完全自由的子图排列。

@@ -252,11 +252,11 @@ if (PrimaryResponse == response && !info.IsPrimary)
 ```
 
 ```
-鼠标按下 → MouseDragPan.Respond() → IsPrimary = true
-    ↓（独占！期间不重新匹配其他响应器）
-鼠标移动 → 直接发给 MouseDragPan（不检查其他响应器）
+鼠标按下 → MouseDragPan.Execute() 返回 NoActionRequired（记录起点，不抢占）
     ↓
-鼠标弹起 → ResetState() → IsPrimary = false
+鼠标移动 → 拖拽超过 5px 阈值后返回 IsPrimary = true（独占！不重新匹配）
+    ↓
+鼠标弹起 → 返回 Refresh（不含 IsPrimary）→ PrimaryResponse 清空
 ```
 
 - 拖拽期间其他响应器（如 MouseWheelZoom）被完全屏蔽
@@ -283,14 +283,10 @@ if (PrimaryResponse == response && !info.IsPrimary)
 - `MouseInteractWithPlottables` 排第一：如果某个 Plottable 被标记为可拖拽，它优先于全局平移
 - 自定义插入 `Insert(0, ...)` 获得最高优先级
 
-### 20. `KeyboardState` 不会自动重置
+### 20. `KeyboardState` 的失焦清理机制
 
-- 控件失焦时（如 Alt+Tab 切窗口），`KeyboardState` 可能残留"Ctrl 按下"的状态
-- `IPlotControl.Reset()` 内部会调用 `UserInputProcessor.Reset()` 清理所有状态
-
----
-
-## 七、控件层
+- 控件失焦时经 `UserInputProcessor.ProcessLostFocus()` → `LostFocusAction` 自动遍历所有响应器调用 `ResetState()` 并清空 `KeyboardState`——残留状态会被清理
+- 但这只在控件正确触发 LostFocus 事件时生效；绕过控件直接操作 `UserInputProcessor` 时需自行调用 `ResetState()`
 
 ### 21. `Plot` 与 `IPlotControl` 的循环引用
 
@@ -299,7 +295,8 @@ Plot.PlotControl = this;   // Plot 知道自己的控件宿主
 ```
 
 - `Plot` 和 `IPlotControl` 之间存在循环引用
-- 替换 Plot 时用 `Reset(newPlot)` 模式：先 dispose 旧 Plot → 设置新 Plot → 调用 `UserInputProcessor.Reset()`
+- `Reset(newPlot)` 的实际顺序（[FormsPlotBase.cs](file:///d:/dev/store/ScottPlot/src/ScottPlot5/ScottPlot5%20Controls/ScottPlot.WinForms/FormsPlotBase.cs#L105-L114)）：先赋值 `Plot = newPlot` → `oldPlot?.Dispose()` → `newPlot.PlotControl = this` → `UserInputProcessor.Reset()` → `Multiplot.Reset(newPlot)`
+- **Reset 不主动调用 Refresh()**，替换后需自行触发重绘
 
 ### 22. 所有平台控件最终汇合到同一个方法
 
@@ -310,7 +307,7 @@ Avalonia → ...           → RenderManager.Render(canvas, rect)
 Blazor  → JS Interop     → RenderManager.Render(canvas, rect)
 ```
 
-- 平台控件代码量极少（每个 ~80 行），做的就是"事件转发 + 渲染触发"
+- 平台控件代码量极少（基类 100~190 行，整包 3~11 个文件），做的就是"事件转发 + 渲染触发"
 - 如果想支持新平台，只需实现 `IPlotControl` 接口 + 一个薄控件封装
 
 ### 23. HiDPI 的 `DisplayScale` 检测
@@ -322,6 +319,59 @@ plot.ScaleFactorF = DisplayScale;
 
 - 控件构造函数中自动检测，但检测机制因平台而异
 - 如果跨屏拖拽窗口（屏 100% → 屏 150%），需手动监听 DPI 变化
+
+### 24. 重绘入口在 IPlotControl，`Plot` 没有 `Refresh()`
+
+```csharp
+// 源码: Plot.cs — 无 Refresh()、无 DataChanged() 方法
+// 源码: IPlotControl.cs:L18 — void Refresh()
+```
+
+- 修改数据后**必须**调用 `control.Refresh()`（或 `Plot.Render()` / `SavePng()`）才会重绘
+- 平台控件的 `Invalidate()` 只是触发重绘事件，最终仍走 `Refresh()`
+
+### 25. `SignalConst` 已过时
+
+```csharp
+// 源码: SignalConstSource.cs — 继承 SignalSourceGenericArray<T> + SegmentedTree, 标记 [Obsolete]
+```
+
+- 它不是"常量值 O(1) 存储"的特殊数据源，就是 `Signal` + SegmentedTree 的封装
+- 新代码直接用 `Signal`，不要再用 `SignalConst`
+
+### 26. `CacheScatterLimitsDecorator` 不会自动生效
+
+```csharp
+// 源码: ScatterSourceWithCachedLimits.cs — 核心库中零实例化
+```
+
+- `Add.Scatter()` **不会**自动包裹该装饰器，需要手动 `new CacheScatterLimitsDecorator(...)`
+
+### 27. `IPlottableGL` 核心库无实现者
+
+```csharp
+// 源码: ScottPlot.OpenGL/Plottables/ScatterGL.cs — 唯一实现者
+```
+
+- CandlestickPlot 等核心 Plottable 都是 CPU 渲染（只实现 `IPlottable`）
+- GPU 加速需要：ScottPlot.OpenGL 包 + GL 变体控件（FormsPlotGL / WpfPlotGL / BlazorPlotGL）
+
+### 28. 交互 API 的准确名称
+
+```csharp
+// ResponseInfo 静态值: NoActionRequired / Refresh（不是 NoAction）
+// KeyboardState: Add/Remove/IsPressed（没有 Press/Release，也没有 IsShift/IsCtrl/IsAlt）
+// 判断修饰键: keys.IsPressed(StandardKeys.Shift)
+// 核心入口: UserInputProcessor.Process(IUserAction)（ProcessMouseDown 等是平台扩展方法）
+```
+
+### 29. Multiplot 的子图 API
+
+```csharp
+// 没有 AddSubplot() — 用 mp.AddPlot(plot) / mp.AddPlots(int)
+// 布局类: MultiplotLayouts.Rows(默认) / Grid / Columns / CustomGrid
+// Reset() 不主动重绘
+```
 
 ---
 
@@ -343,7 +393,10 @@ plot.ScaleFactorF = DisplayScale;
 | 12 | `IRenderLast` Plottable 覆盖在轴标签之上 | ★★ | IRenderLast.cs:L3 |
 | 13 | `UserActionResponses` 顺序 = 交互优先级 | ★ | UserInputProcessor.cs:L86 |
 | 14 | HiDPI 跨屏拖拽需手动重检 `DisplayScale` | ★ | 平台相关 |
-| 15 | 控件 ~80 行薄封装，所有渲染在 RenderManager 中 | ★ | RenderManager.cs |
+| 15 | 控件基类 100~190 行薄封装，渲染在 RenderManager 中 | ★ | RenderManager.cs |
+| 16 | 改数据后不 `Refresh()` 不重绘（Plot 无 Refresh 方法） | ★★★★ | IPlotControl.cs:L18 |
+| 17 | `SignalConst` 已 `[Obsolete]`，实为 Signal+SegmentedTree | ★★ | SignalConstSource.cs |
+| 18 | GPU 渲染需 ScottPlot.OpenGL 包 + GL 变体控件 | ★ | ScatterGL.cs |
 
 ---
 

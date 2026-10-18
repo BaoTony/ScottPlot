@@ -1,168 +1,278 @@
 # -*- coding: utf-8 -*-
-"""ScottPlot 5 数据链路分析 - 从数据源到屏幕像素的完整追踪"""
-import os, re
-from collections import defaultdict
+"""ScottPlot 5 全库源码统计 —— 学习文档事实核查辅助工具
 
-base = r'd:\dev\store\ScottPlot\src\ScottPlot5\ScottPlot5'
+用途：一次性扫描 src/ScottPlot5 全部源码，输出解决方案全貌、核心库分层
+      文件数、Primitives 类型分类、接口清单、数据源继承关系、Plottable
+      清单、渲染管线步骤、交互响应器、Add 方法数、枚举成员数等关键事实，
+      供 learning/ 下各编号文档核对数字口径使用。
 
-# ============================================================
-# 1. 追踪 IPlottable 的实现类（图表数据的消费者）
-# ============================================================
-plottables_dir = os.path.join(base, 'Plottables')
-plottable_classes = []
-for root, dirs, files in os.walk(plottables_dir):
-    for f in files:
-        if f.endswith('.cs') and not f.endswith('.g.cs'):
-            fpath = os.path.join(root, f)
-            with open(fpath, 'r', encoding='utf-8', errors='ignore') as fp:
-                content = fp.read()
-            # 找实现了 IPlottable 的 class
-            matches = re.findall(r'class\s+(\w+).*?:\s*(.*?IPlottable.*?)(?:\n|{)', content)
-            if matches:
-                cls_name = matches[0][0]
-                # 找构造函数中注入的数据源类型
-                ctor_match = re.search(r'public\s+' + cls_name + r'\s*\((.*?)\)', content)
-                ctor_params = ctor_match.group(1) if ctor_match else ''
-                # 找 Data 属性类型
-                data_matches = re.findall(r'(?:public|private|protected|internal)\s+(\w+(?:Source|DataSource|List|Array))\s+\w+\s*[{=]', content)
-                data_types = list(set(data_matches))
-                plottable_classes.append((cls_name, ctor_params.strip(), data_types))
-
-print("=" * 75)
-print("链路一：数据源 → Plottable（图表）")
-print("=" * 75)
-print(f"{'Plottable':25s} {'构造函数参数':45s}")
-print("-" * 75)
-for name, ctor, dts in sorted(plottable_classes):
-    print(f"{name:25s} {ctor[:45]:45s}")
+运行：python learning/scripts/_stats.py
+"""
+import os
+import re
+from collections import OrderedDict
 
 # ============================================================
-# 2. 追踪 PlottableAdder（Plot.Add.XXX 的入口）
+# 路径常量
 # ============================================================
-adder_file = os.path.join(base, 'PlottableAdder.cs')
-if os.path.exists(adder_file):
-    with open(adder_file, 'r', encoding='utf-8', errors='ignore') as fp:
-        adder_content = fp.read()
-    add_methods = re.findall(r'public\s+(\w+)\s+(\w+)\((.*?)\)', adder_content)
-    print(f"\nPlot.Add 提供 {len(add_methods)} 个添加方法")
+SLN = r'd:\dev\store\ScottPlot\src\ScottPlot5'        # ScottPlot5 源码根目录
+CORE = os.path.join(SLN, 'ScottPlot5')                 # 核心库 ScottPlot5
+CTRL = os.path.join(SLN, 'ScottPlot5 Controls')        # 平台控件解决方案
 
-# ============================================================
-# 3. 追踪 RenderManager 渲染管道
-# ============================================================
-rm_file = os.path.join(base, 'Rendering', 'RenderManager.cs')
-if os.path.exists(rm_file):
-    with open(rm_file, 'r', encoding='utf-8', errors='ignore') as fp:
-        rm_content = fp.read()
-    actions = re.findall(r'new RenderActions\.(\w+)\(\)', rm_content)
-    print(f"\n{'='*75}")
-    print("链路二：RenderManager 渲染管道（20+ 步）")
-    print("=" * "75")
-    for i, a in enumerate(actions):
-        print(f"  {i+1:2d}. {a}")
 
-# ============================================================
-# 4. 追踪 Primitives（基础数据类型）
-# ============================================================
-primitives_dir = os.path.join(base, 'Primitives')
-primitives = []
-for root, dirs, files in os.walk(primitives_dir):
-    for f in files:
-        if f.endswith('.cs') and not f.endswith('.g.cs'):
-            primitives.append(f.replace('.cs', ''))
+def read(path):
+    """读取文本文件内容（忽略编码错误，容错处理）"""
+    with open(path, 'r', encoding='utf-8', errors='ignore') as fp:
+        return fp.read()
 
-print(f"\n{'='*75}")
-print("链路零：Primitives 基础类型（{0} 个）".format(len(primitives)))
-print("=" * "75")
-# Group by category
-structs = []
-classes = []
-records = []
-for f in sorted(primitives):
-    fpath = os.path.join(primitives_dir, f + '.cs') if os.path.exists(os.path.join(primitives_dir, f + '.cs')) else None
-    if fpath:
-        with open(fpath, 'r', encoding='utf-8', errors='ignore') as fp:
-            first = fp.readline()[:100]
-        if 'struct' in first or 'partial struct' in first:
-            structs.append(f)
-        elif 'record' in first:
-            records.append(f)
-        else:
-            classes.append(f)
 
-print(f"  Structs ({len(structs)}): {', '.join(structs[:15])}...")
-print(f"  Records ({len(records)}): {', '.join(records)}")
+def cs_files(folder):
+    """递归收集目录下所有手写 .cs 文件（排除生成文件 bin/obj/.g.cs/Designer）"""
+    out = []
+    for root, dirs, files in os.walk(folder):
+        # 跳过编译输出目录，避免把生成代码计入统计
+        dirs[:] = [d for d in dirs if d not in ('bin', 'obj')]
+        for f in files:
+            if f.endswith('.cs') and not f.endswith(('.g.cs', '.Designer.cs')):
+                out.append(os.path.join(root, f))
+    return out
+
+
+def strip_comments(code):
+    """去掉 C# 的 // 行注释与 /* */ 块注释，保证后续正则只匹配真实代码"""
+    code = re.sub(r'//[^\n]*', '', code)          # 删除行注释
+    code = re.sub(r'/\*.*?\*/', '', code, flags=re.S)  # 删除块注释（含跨行）
+    return code
+
+
+def line_count(paths):
+    """统计一组文件的总行数（用于体量概览）"""
+    total = 0
+    for p in paths:
+        try:
+            with open(p, 'r', encoding='utf-8', errors='ignore') as fp:
+                total += sum(1 for _ in fp)
+        except OSError:
+            pass
+    return total
+
+
+def section(title):
+    """打印统一风格的分节标题"""
+    print('\n' + '=' * 78)
+    print(title)
+    print('=' * 78)
+
 
 # ============================================================
-# 5. 追踪 Controls 中的 Plot 绑定
+# 一、解决方案全貌：每个项目的 .cs 文件数与代码行数
 # ============================================================
-controls_base = r'd:\dev\store\ScottPlot\src\ScottPlot5\ScottPlot5 Controls'
-controls = defaultdict(str)
-for root, dirs, files in os.walk(controls_base):
-    for f in files:
-        if f.endswith('.cs') and 'Plot' in f and 'Control' in f:
-            fpath = os.path.join(root, f)
-            with open(fpath, 'r', encoding='utf-8', errors='ignore') as fp:
-                for line in fp:
-                    if 'Plot' in line and '=' in line and 'new' in line:
-                        controls[os.path.basename(root)] += line.strip()[:100] + '\n'
-                        break
-
-print(f"\n{'='*75}")
-print("链路三：Plot ↔ Controls 双向绑定")
-print("=" * "75")
-for ctrl, info in sorted(controls.items()):
-    print(f"  {ctrl}: {info.strip()[:80]}")
+section('一、解决方案全貌（src/ScottPlot5 下各项目）')
+for proj in sorted(os.listdir(SLN)):
+    pdir = os.path.join(SLN, proj)
+    if not os.path.isdir(pdir):
+        continue
+    files = cs_files(pdir)
+    print(f'  {proj:28s} {len(files):5d} 个 .cs   {line_count(files):8d} 行')
 
 # ============================================================
-# 6. 追踪 Interactivity 交互数据流
+# 二、核心库分层地图：ScottPlot5 主项目各目录文件数
 # ============================================================
-inter_dir = os.path.join(base, 'Interactivity')
-actions_dir = os.path.join(inter_dir, 'UserActions')
-responses_dir = os.path.join(inter_dir, 'UserActionResponses')
-
-actions_list = []
-responses_list = []
-
-for root, dirs, files in os.walk(actions_dir):
-    for f in files:
-        if f.endswith('.cs'):
-            actions_list.append(f.replace('.cs', ''))
-
-for root, dirs, files in os.walk(responses_dir):
-    for f in files:
-        if f.endswith('.cs'):
-            responses_list.append(f.replace('.cs', ''))
-
-print(f"\n{'='*75}")
-print("链路四：用户输入 → 交互响应")
-print("=" * "75")
-print(f"  UserActions ({len(actions_list)})   →  UserInputProcessor")
-print(f"     {', '.join(actions_list)}")
-print(f"  UserActionResponses ({len(responses_list)})   →  修改 Plot 状态")
-print(f"     {', '.join(responses_list)}")
+section('二、核心库分层地图（ScottPlot5 各目录 .cs 文件数）')
+core_root_files = [f for f in os.listdir(CORE) if f.endswith('.cs')]
+print(f'  {"(根目录散文件)":28s} {len(core_root_files):5d}')
+for sub in sorted(os.listdir(CORE)):
+    subdir = os.path.join(CORE, sub)
+    if os.path.isdir(subdir) and sub not in ('bin', 'obj'):
+        n = len(cs_files(subdir))
+        if n:
+            print(f'  {sub:28s} {n:5d}')
 
 # ============================================================
-# 7. 追踪 DataSources 接口层次
+# 三、Primitives 类型分类（按文件内首个类型声明的种类统计）
 # ============================================================
-ds_dir = os.path.join(base, 'DataSources')
-ds_classes = []
-for root, dirs, files in os.walk(ds_dir):
-    for f in files:
-        if f.endswith('.cs') and not f.endswith('.g.cs'):
-            fpath = os.path.join(root, f)
-            with open(fpath, 'r', encoding='utf-8', errors='ignore') as fp:
-                content = fp.read()
-            cls = re.findall(r'class\s+(\w+)\s*:', content)
-            ifaces = re.findall(r':\s*(I\w+Source[^,\n{]*)', content)
-            if cls:
-                ds_classes.append((cls[0], ifaces))
+section('三、Primitives 基础类型分类')
+prim_dir = os.path.join(CORE, 'Primitives')
+kind_re = re.compile(
+    r'\b(public|internal)?\s*(?:sealed\s+|abstract\s+|static\s+|partial\s+)*'
+    r'(record\s+struct|record\s+class|record|struct|class|interface|enum)\s+(\w+)')
+kinds = OrderedDict([('struct', []), ('record struct', []), ('record', []),
+                     ('class', []), ('interface', []), ('enum', [])])
+for path in cs_files(prim_dir):
+    m = kind_re.search(strip_comments(read(path)))
+    if m:
+        kind = m.group(2)
+        if kind == 'record class':   # record class 归并到 record 一类
+            kind = 'record'
+        kinds.setdefault(kind, []).append(os.path.basename(path)[:-3])
+for kind, names in kinds.items():
+    if names:
+        preview = ', '.join(sorted(names)[:8])
+        more = f' ... 等 {len(names)} 个' if len(names) > 8 else ''
+        print(f'  {kind:14s} {len(names):3d} 个  {preview}{more}')
 
-print(f"\n{'='*75}")
-print("链路一详细：DataSource 继承/接口层次")
-print("=" * "75")
-for cls, ifaces in sorted(ds_classes):
-    print(f"  {cls:35s} : {', '.join(ifaces[:3])}")
+# ============================================================
+# 四、接口统计：核心库中声明的全部 interface
+# ============================================================
+section('四、核心库接口（interface）统计')
+iface_re = re.compile(r'\binterface\s+(I\w+)')
+ifaces_by_dir = {}
+for path in cs_files(CORE):
+    rel = os.path.relpath(path, CORE)
+    top = rel.split(os.sep)[0]
+    names = iface_re.findall(strip_comments(read(path)))
+    if names:
+        ifaces_by_dir.setdefault(top, []).extend(names)
+total_ifaces = sum(len(v) for v in ifaces_by_dir.values())
+print(f'  合计 {total_ifaces} 个接口，分布：')
+for top, names in sorted(ifaces_by_dir.items(), key=lambda kv: -len(kv[1])):
+    preview = ', '.join(sorted(names)[:6])
+    more = f' ...' if len(names) > 6 else ''
+    print(f'    {top:22s} {len(names):3d} 个  {preview}{more}')
 
-print("\n" + "=" * 75)
-print("数据链路总图")
-print("=" * 75)
+# ============================================================
+# 五、DataSources：具体类型及其实现的数据源接口
+# ============================================================
+section('五、DataSources 类型与实现的接口')
+ds_dir = os.path.join(CORE, 'DataSources')
+type_re = re.compile(r'\b(class|record(?:\s+struct)?|struct)\s+(\w+)\s*[:<{]?([^\n{{]*)')
+iface_def_re = re.compile(r'\binterface\s+(I\w+)')
+defined_ifaces = []
+impl_types = []
+for path in cs_files(ds_dir):
+    code = strip_comments(read(path))
+    defined_ifaces += iface_def_re.findall(code)
+    for m in type_re.finditer(code):
+        kind, name, bases = m.group(1), m.group(2), m.group(3)
+        if name in defined_ifaces or kind.startswith('interface'):
+            continue
+        src_bases = re.findall(r'I\w*(?:Source|DataSource)\w*', bases)
+        impl_types.append((name, kind.replace(' ', ''), ', '.join(src_bases) or '(基类间接实现)'))
+for name, kind, bases in sorted(impl_types):
+    print(f'  {name:38s} {kind:14s} {bases}')
+
+# ============================================================
+# 六、Plottables：文件数口径（根目录 / Interactive / 其他）
+# ============================================================
+section('六、Plottable 图表类（实现 IPlottable）')
+plottables_dir = os.path.join(CORE, 'Plottables')
+# 主口径 = .cs 文件数：根目录 + Interactive 子目录（其余子目录单独列出）
+root_files = [f for f in os.listdir(plottables_dir) if f.endswith('.cs')]
+for sub in sorted(os.listdir(plottables_dir)):
+    subdir = os.path.join(plottables_dir, sub)
+    if os.path.isdir(subdir):
+        n = len([f for f in os.listdir(subdir) if f.endswith('.cs')])
+        print(f'  Plottables/{sub:20s} {n:3d} 个')
+print(f'  Plottables 根目录          {len(root_files):3d} 个')
+print(f'  Plottables 合计            {len(cs_files(plottables_dir)):3d} 个（= 根目录 + 各子目录）')
+
+# 辅助口径 = 从类声明中提取 IPlottable 实现类名（供交叉核对）
+iplottable_re = re.compile(r'class\s+(\w+)\b[^:;\n]*:\s*([^\n{]*IPlottable[^\n{]*)')
+normal, interactive = [], []
+for path in cs_files(plottables_dir):
+    code = strip_comments(read(path))
+    for m in iplottable_re.finditer(code):
+        name = m.group(1)
+        (interactive if 'Interactive' in name or os.sep + 'Interactive' + os.sep in path
+         else normal).append(name)
+print(f'  （按类声明识别：常规 {len(normal)} 个，Interactive {len(interactive)} 个；'
+      f'部分类经由 PlottableBase 间接实现 IPlottable，故文件数为准）')
+
+# ============================================================
+# 七、渲染管线：RenderManager 中的 RenderActions 步骤序列
+# ============================================================
+section('七、RenderManager 渲染管线步骤')
+rm_path = os.path.join(CORE, 'Rendering', 'RenderManager.cs')
+actions = re.findall(r'new RenderActions\.(\w+)\(\)', read(rm_path))
+ra_dir = os.path.join(CORE, 'Rendering', 'RenderActions')
+ra_files = len([f for f in os.listdir(ra_dir) if f.endswith('.cs')])
+for i, a in enumerate(actions):
+    print(f'  {i+1:2d}. {a}')
+print(f'  （管道中调用 {len(actions)} 步；RenderActions 目录文件数 {ra_files}）')
+
+# ============================================================
+# 八、Plot.Add 入口：PlottableAdder 各分部文件中的添加方法
+# ============================================================
+section('八、Plot.Add 添加方法（PlottableAdder.cs）')
+# 精确匹配方法声明行：public 返回类型 方法名(
+# 该模式不会误匹配字段初始化器（其括号不在标识符后紧邻位置）
+method_re = re.compile(r'^\s*public\s+[\w<>\[\],\.\?]+\s+(\w+)\s*\(', re.M)
+adder_methods = []
+adder_files = [p for p in cs_files(CORE) if os.path.basename(p).startswith('PlottableAdder')]
+for path in adder_files:
+    for m in method_re.finditer(strip_comments(read(path))):
+        name = m.group(1)
+        # 排除类声明（主构造函数）与 Get 开头的辅助方法（如 GetNextColor）
+        if name != 'PlottableAdder' and not name.startswith('Get'):
+            adder_methods.append(name)
+print(f'  分部文件数：{len(adder_files)}；添加方法合计 {len(adder_methods)} 个（含重载）')
+
+# ============================================================
+# 九、Interactivity：用户动作、响应器、默认注册清单
+# ============================================================
+section('九、Interactivity 交互层')
+actions_dir = os.path.join(CORE, 'Interactivity', 'UserActions')
+responses_dir = os.path.join(CORE, 'Interactivity', 'UserActionResponses')
+ua = [f[:-3] for f in os.listdir(actions_dir) if f.endswith('.cs')]
+uar = [f[:-3] for f in os.listdir(responses_dir) if f.endswith('.cs')]
+print(f'  UserActions（用户输入动作）：{len(ua)} 个 → {", ".join(sorted(ua))}')
+print(f'  UserActionResponses（响应器文件）：{len(uar)} 个 → {", ".join(sorted(uar))}')
+# 默认注册的响应器：从 UserInputProcessor 中提取 new UserActionResponses.X()
+# （用 dict.fromkeys 按出现顺序去重，避免重复注册点造成虚高计数）
+uip_path = os.path.join(CORE, 'Interactivity', 'UserInputProcessor.cs')
+if os.path.exists(uip_path):
+    defaults = re.findall(r'new UserActionResponses\.(\w+)\(', read(uip_path))
+    unique = list(dict.fromkeys(defaults))
+    print(f'  UserInputProcessor 默认注册：{len(unique)} 个（{len(defaults)} 处调用）')
+    print(f'    → {", ".join(unique)}')
+
+# ============================================================
+# 十、枚举成员数：MarkerShape / Colormap / Palette 等常用口径
+# ============================================================
+section('十、常用枚举与集合口径')
+
+
+def enum_members(enum_name):
+    """在全核心库中查找 enum 定义并统计成员个数"""
+    for path in cs_files(CORE):
+        code = strip_comments(read(path))
+        m = re.search(r'enum\s+' + enum_name + r'\b[^{]*\{(.+?)\}', code, re.S)
+        if m:
+            body = m.group(1)
+            # 顶层成员以逗号分隔（成员内可能有 = 赋值，但不影响计数）
+            members = [x for x in body.replace('\n', ' ').split(',') if x.strip()]
+            return len(members), path
+    return None, None
+
+
+for enum_name in ('MarkerShape', 'ArrowShape', 'ColorType', 'Edge', 'Alignment'):
+    n, p = enum_members(enum_name)
+    if n:
+        print(f'  {enum_name:16s} {n:3d} 个成员  （{os.path.basename(p)}）')
+
+# Colormap / Palette 实现（每种样式一个类）
+colormaps = set()
+palettes = set()
+for path in cs_files(CORE):
+    code = strip_comments(read(path))
+    colormaps |= set(re.findall(r'class\s+(\w+)\b[^:;\n]*:\s*[^\n{]*IColormap', code))
+    palettes |= set(re.findall(r'class\s+(\w+)\b[^:;\n]*:\s*[^\n{]*IPalette', code))
+print(f'  IColormap 实现：{len(colormaps)} 个；IPalette 实现：{len(palettes)} 个')
+
+# ============================================================
+# 十一、平台控件：8 个平台项目与 IPlotControl 实现
+# ============================================================
+section('十一、平台控件（ScottPlot5 Controls）')
+iplotcontrol_re = re.compile(r'class\s+(\w+)\b[^:;\n]*:\s*([^\n{]*IPlotControl)')
+for plat in sorted(os.listdir(CTRL)):
+    pdir = os.path.join(CTRL, plat)
+    if not os.path.isdir(pdir):
+        continue
+    files = cs_files(pdir)
+    impls = []
+    for path in files:
+        impls += iplotcontrol_re.findall(strip_comments(read(path)))[0:1]
+    impl_names = ', '.join(n for n, _ in impls) or '-'
+    print(f'  {plat:24s} {len(files):4d} 个 .cs   IPlotControl 实现: {impl_names}')
+
+print('\n（统计完成）')

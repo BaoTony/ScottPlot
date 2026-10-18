@@ -1,6 +1,6 @@
 # ScottPlot 5 Plottables 层架构剖析
 
-> 61 主文件 + 11 个 Interactive 文件 = 72 个文件 · ~8,400 行代码 · 占核心库 16.8%
+> 61 根目录文件 + 10 个 Interactive 文件 + 1 个 SubplotPreRenderActions = 72 个文件 · ~8,400 行代码 · 占核心库 16.8%
 
 ---
 
@@ -10,13 +10,13 @@
 ┌──────────────────────────────────────────────────────────────────────┐
 │                     Plottables 层全景 (72 files)                       │
 ├───────────────┬──────────────┬───────────────┬──────────────────────┤
-│ 散点/信号 (6)  │ 柱状/条形 (3)│ 金融图表 (3)   │ 矢量/箭头 (2)        │
+│ 散点/信号 (7)  │ 柱状/条形 (3)│ 金融图表 (3)   │ 矢量/箭头 (2)        │
 ├───────────────┼──────────────┼───────────────┼──────────────────────┤
 │ 热力/等值 (4)  │ 饼图/径向 (4)│ 极坐标/雷达 (4)│ 统计图表 (3)         │
 ├───────────────┼──────────────┼───────────────┼──────────────────────┤
-│ 直线/跨度 (7)  │ 形状图形 (5) │ 标注/文字 (6) │ 实时数据 (3)         │
+│ 直线/跨度 (8)  │ 形状图形 (5) │ 标注/文字 (7) │ 实时数据 (3)         │
 ├───────────────┼──────────────┼───────────────┼──────────────────────┤
-│ 交互工具 (11)  │ 装饰器 (2)  │ 其他 (4)      │                      │
+│ 交互工具 (10)  │ 装饰器 (2)  │ 其他 (6)      │ SubplotPreRender (1) │
 └───────────────┴──────────────┴───────────────┴──────────────────────┘
 ```
 
@@ -55,14 +55,14 @@ class XxxPlot : IPlottable, IHasLine, IHasMarker, IHasLegendText, ...
 
 ## 三、按类别逐一分析
 
-### 3.1 散点/信号系列 (6个)
+### 3.1 散点/信号系列 (7个)
 
 | Plottable | 数据源 | 核心特性 | 接口链 |
 |---|---|---|---|
 | **Scatter** | `IScatterSource` | XY散点+连线+填充 | `IPlottable, IHasLine, IHasMarker, IHasLegendText` |
 | **Signal** | `ISignalSource` | 等间距大数据，SegmentedTree 降采样 | `IPlottable, IHasLine, IHasMarker, IHasLegendText` |
 | **SignalXY** | `ISignalXYSource` | 不等间距大数据降采样 | `IPlottable, IHasLine, IHasMarker, IHasLegendText` |
-| **SignalConst** | `ISignalSource` | 全部 Y 值相同，O(1) 极速 | `IPlottable, IHasLine, IHasMarker` |
+| **SignalConst** | `SignalConstSource<T>` | **已标记 [Obsolete]**：内部即 Signal + SegmentedTree，新代码请直接用 Signal | 继承自 `Signal` |
 | **LinePlot** | `CoordinateLine` | 两点确定一条直线 | `IPlottable, IHasLine, IHasMarker, IHasLegendText` |
 | **FunctionPlot** | `IFunctionSource` | y=f(x) 函数拟合 | `IPlottable, IHasLine` |
 | **FillY** | `IScatterSource` + `IScatterSource?` | 两条曲线间区域填充 | `IPlottable, IHasLine, IHasFill` |
@@ -82,7 +82,7 @@ Data.GetScatterPoints() → Coordinates[]
 | Plottable | 数据 | 特性 |
 |---|---|---|
 | **BarPlot** | `List<Bar>` | 垂直/水平柱状图，每柱独立样式 |
-| **LollipopPlot** | `List<Bar>` + `List<Coordinates>` | 棒棒糖图（柱+端点） |
+| **LollipopPlot** | `IEnumerable<Coordinates>` 或 `double[]` 值 | 棒棒糖图（柱+端点） |
 | **Coxcomb** | `IList<PieSlice>` | 玫瑰图（面积=值） |
 
 **Bar 数据结构**：
@@ -103,8 +103,8 @@ public class Bar
 
 | Plottable | 数据 | 特性 | 接口 |
 |---|---|---|---|
-| **OHLCPlot** | `IOHLCSource` | 开/高/低/收盘—竖线 | `IHasLegendText` |
-| **CandlestickPlot** | `IOHLCSource` | 蜡烛图，自动红涨绿跌着色 | `IPlottableGL, IHasLegendText` |
+| **OhlcPlot** | `IOHLCSource` | 开/高/低/收盘—竖线 | `IPlottable` |
+| **CandlestickPlot** | `IOHLCSource` | 蜡烛图，自动红涨绿跌着色 | `IPlottable` |
 | **FinancialTimeAxis** | — | 金融时间轴（忽略非交易时段） | 特殊轴管理 |
 
 ### 3.4 热力/等值系列 (4个)
@@ -143,7 +143,7 @@ class Heatmap : IPlottable, IHasColorAxis
 | **Pie** | `PieBase` | 标准饼图 + Donut 模式 (DonutFraction) |
 | **PieBase** | — | 抽象基类，处理标签和爆裂 |
 | **RadialGaugePlot** | — | 径向仪表盘（多指针） |
-| **RadialGauge** | — | 单个径向仪表 |
+| **RadialGauge** | internal 模型类 | RadialGaugePlot 的组成单元（非独立图表、非公开 API） |
 
 ### 3.6 极坐标/雷达/特殊轴 (4个)
 
@@ -168,10 +168,10 @@ class Heatmap : IPlottable, IHasColorAxis
 | Plottable | 数据 | 特性 |
 |---|---|---|
 | **BoxPlot** | `List<Box>` | 箱线图（Min/Q1/Median/Q3/Max/Outliers） |
-| **ErrorBar** | `IErrorBarSource` | XY 误差棒图 |
-| **HistogramBars** | 统计数据 | 直方图/频率分布 |
+| **ErrorBar** | 直接持有 `IReadOnlyList` 属性（无数据源接口） | XY 误差棒图 |
+| **HistogramBars** | `Histogram` | 直方图/频率分布 |
 
-### 3.9 直线/跨度系列 (7个)
+### 3.9 直线/跨度系列 (8个)
 
 | Plottable | 线条类型 | 注解 |
 |---|---|---|
@@ -182,6 +182,7 @@ class Heatmap : IPlottable, IHasColorAxis
 | **VerticalSpan** | 垂直填充区域 | X1~X2 |
 | **AxisSpan** | 轴区域 | 基准类，支持拖拽 |
 | **ScaleBar** | 比例尺 | 地图比例尺 |
+| **FloatingAxis** | 浮动轴 | 独立于 Plot 标准轴的游离坐标轴 |
 
 ### 3.10 形状图形 (5个)
 
@@ -193,7 +194,7 @@ class Heatmap : IPlottable, IHasColorAxis
 | **Marker** | 单点标记 |
 | **Markers** | 多点标记（批量渲染） |
 
-### 3.11 标注/文字 (6个)
+### 3.11 标注/文字 (7个)
 
 | Plottable | 用途 |
 |---|---|
@@ -202,6 +203,7 @@ class Heatmap : IPlottable, IHasColorAxis
 | **Crosshair** | 十字光标 |
 | **Tooltip** | 悬浮提示框 |
 | **Callout** | 标注箭头+文本框 |
+| **Bracket** | 括号标注（两点间弧形标注） |
 | **Benchmark** | 性能信息显示 |
 
 ### 3.12 实时数据 (3个)
@@ -214,10 +216,10 @@ class Heatmap : IPlottable, IHasColorAxis
 
 `DataLogger` 实现 `IManagesAxisLimits`，在渲染前自动更新轴范围。
 
-### 3.13 交互工具 (11个 + 2个装饰器)
+### 3.13 交互工具 (10个) 与装饰器 (2个)
 
 ```
-Interactive/
+Interactive/（10 个文件，实现 IPlottable 可被拖拽交互）
 ├── InteractiveMarker          ← 拖拽标记
 ├── InteractiveLineSegment      ← 拖拽线段
 ├── InteractiveVerticalLine     ← 拖拽垂直线
@@ -227,13 +229,15 @@ Interactive/
 ├── InteractiveTrendLine        ← 拖拽趋势线
 ├── InteractiveRectangle        ← 拖拽矩形选框
 ├── InteractiveVerticalLineSegment   ← 可调垂直线段
-├── InteractiveHorizontalLineSegment ← 可调水平线段
-└── ZoomRectangle              ← 缩放矩形
+└── InteractiveHorizontalLineSegment ← 可调水平线段
 
-装饰器 (Wrappers):
+装饰器 (根目录 Wrappers，包裹任意 IPlottable):
 ├── DraggablePlottableDecorator ← 使任意 Plottable 可拖拽
 └── HittablePlottableDecorator  ← 使任意 Plottable 可点击检测
 ```
+
+> 注意：`ZoomRectangle` 位于 Plottables 根目录，但实现的是 `IZoomRectangle`
+> 而非 `IPlottable`——它是缩放框的绘制模型，由渲染管道第 22 步专门绘制。
 
 ---
 
@@ -243,9 +247,9 @@ Interactive/
 IPlottable        → 必须实现: IsVisible, Axes, GetAxisLimits(), Render(), LegendItems
 IHasLine / IHasMarker / IHasFill / IHasLegendText / ... → 样式 Mixin（见下方说明）
 IGetNearest       → GetNearest() 最近点查询
-IManagesAxisLimits→ UpdateAxisLimits() 自动轴范围
+IManagesAxisLimits→ UpdateAxisLimits() 自动轴范围（DataLogger 实现）
 IRenderLast       → RenderLast() 最后渲染（覆盖在坐标轴上）
-IPlottableGL      → GPU 渲染 (Candlestick等)
+IPlottableGL      → GPU 渲染契约（核心库内无实现者，供 OpenGL 附加包实现）
 IHasInteractiveHandles → 交互句柄
 ```
 
@@ -291,12 +295,12 @@ Render(rp):
 
 2. **样式接口是可选插件**：`IHasLine`, `IHasMarker`, `IHasFill` 等是 mixin，Plottable 按需实现。RenderManager 通过 `is IHasLine line` 做运行时类型检测来应用通用样式。
 
-3. **GUI 线程安全的分离**：Plottable 的 `Render()` 方法在渲染管道中被调用（第14步），此时所有数据处理在线程安全的上下文中完成。交互拖拽（`Interactive*` 系列）在 UI 线程中修改数据，然后触发 `Refresh()`。
+3. **GUI 线程安全的分离**：Plottable 的 `Render()` 方法在渲染管道中被调用（第17步 `RenderPlottables`），此时所有数据处理在线程安全的上下文中完成。交互拖拽（`Interactive*` 系列）在 UI 线程中修改数据，然后触发 `Refresh()`。
 
 4. **装饰器模式增强功能**：`DraggablePlottableDecorator` 和 `HittablePlottableDecorator` 可以包裹任何 `IPlottable`，动态添加拖拽或点击检测能力。这是开闭原则的实践。
 
-5. **IRenderLast 控制 Z 序**：默认所有 Plottable 在第14步 `RenderPlottables` 中绘制，实现了 `IRenderLast` 的 Plottable 在第16步 `RenderPlottablesLast` 中绘制，确保它们出现在最上层（如缩放矩形、十字光标、标注）。
+5. **IRenderLast 控制 Z 序**：默认所有 Plottable 在第17步 `RenderPlottables` 中绘制，实现了 `IRenderLast` 的 Plottable 在第24步 `RenderPlottablesLast` 中绘制，确保它们出现在最上层（如缩放矩形、十字光标、标注）。
 
 6. **FinancialTimeAxis 的巧妙设计**：不是一个独立的轴类型，而是一个特殊 Plottable，在渲染时介入 `AxisManager` 的行为，实现"跳过非交易时段"的 X 轴显示。
 
-7. **SignalConst 的极简化**：当知道所有 Y 值相同时，不需要逐点计算，只需要一个点——这是性能优化的极限案例。
+7. **SignalConst 已成历史**：`SignalConst<T>` 已标记 `[Obsolete]`，其内部就是 `Signal` + `SignalConstSource<T>`（SegmentedTree 预构建优化）。新代码直接用 `Add.Signal()` 即可。

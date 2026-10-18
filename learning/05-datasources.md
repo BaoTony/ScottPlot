@@ -15,8 +15,8 @@
 ├──────────────────────┼────────────────────┼─────────────────────┤
 │ 实时数据流 (2)        │ 优化引擎 (3)        │ 辅助 (5)            │
 │ DataLogger/Streamer  │ SegmentedTree      │ Function, Vector... │
-│                      │ MinMaxCache        │                     │
-│                      │ CacheLimitsDecorator│                     │
+│                      │ MinMaxCache        │ CoordinateData...   │
+│                      │ SignalInterpolation│                     │
 └──────────────────────┴────────────────────┴─────────────────────┘
 ```
 
@@ -70,24 +70,28 @@ public DataPoint GetNearest(Coordinates mouseLocation, RenderDetails renderInfo,
 
 `GetNearestSmart` 根据 **renderInfo 中的像素缩放因子**，将 `maxDistance`(px) 转换为坐标距离阈值，遍历可见范围内的点找到最近者，避免扫描全部数据。
 
-### 2.5 CacheScatterLimitsDecorator（装饰器模式）
+### 2.5 CacheScatterLimitsDecorator（装饰器模式，可选）
 
 ```csharp
+// 文件: DataSources/ScatterSourceWithCachedLimits.cs（文件名与类名不一致，注意）
 public class CacheScatterLimitsDecorator(IScatterSource source) : IScatterSource
 {
     private AxisLimits? _axisLimits = null;
-    // 首次调用计算，后续直接返回缓存
+    // 首次调用计算，后续直接返回缓存（GetLimitsX/Y 同理）
     public AxisLimits GetLimits() => _axisLimits ??= _source.GetLimits();
 }
 ```
 
-**设计意图**：数据不变化时，`GetLimits()` 重复计算是浪费。该装饰器自动缓存首次结果。由 `PlottableAdder` 在创建 Scatter 时自动包裹：
+**重要事实**：该装饰器只是**可选的公共工具类**——核心库中没有任何地方实例化它，
+`PlottableAdder` 创建 Scatter 时**不会自动包裹**：
+
 ```
 PlottableAdder.Scatter(xs, ys)
   → source = new ScatterSourceDoubleArray(xs, ys)
-  → source = new CacheScatterLimitsDecorator(source)  // 自动包裹！
-  → new Scatter(source)
+  → new Scatter(source)          ← 直接传入，无自动装饰
 ```
+
+若数据静态且 GetLimits() 被高频重复调用，可手动 `new CacheScatterLimitsDecorator(source)` 后传给 Scatter。
 
 ---
 
@@ -131,7 +135,7 @@ SignalSourceBase (abstract):
 | `FastSignalSourceDouble` | `SignalSourceBase` | `IReadOnlyList<double>` | MinMaxCache |
 | `SignalSourceGenericArray<T>` | — | `T[]` | SegmentedTree\<T\> |
 | `SignalSourceGenericList<T>` | — | `List<T>` | SegmentedTree\<T\> |
-| `SignalConstSource<T>` | — | `T` (常量!) | 所有Y值相同，O(1) min/max |
+| `SignalConstSource<T>` | `SignalSourceGenericArray<T>` | `T[]`（数值类型） | SegmentedTree（静态大数据，配合 SignalConst\<T\>） |
 | `SignalXYSourceDoubleArray` | — | `double[] Xs, double[] Ys` | 不等间距但大数据 |
 | `SignalXYSourceGenericArray<T>` | — | `T[]` | 不等间距大数据 |
 | `SignalXYSourceGenericList<T>` | — | `List<T>` | 不等间距+动态 |
@@ -227,7 +231,7 @@ O(n) 构建线段树                      O(n/cachePeriod) 构建缓存 (支持�
 O(log n) 单点更新                    不支持单点更新
 O(log n) 区间查询                    O(1) 缓存命中, O(cachePeriod) cache miss
 内存: 2*2^ceil(log₂(N))            内存: 2*N/cachePeriod
-适合静态/低频更新大数据               适合高频追加数据 (DataLogger)
+适合静态/低频更新大数据               适合频繁更新的 Signal 数据 (FastSignalSourceDouble)
 ```
 
 ---
@@ -288,6 +292,7 @@ class DataStreamerSource(double[] data)  // data: 固定长度缓冲区
 
 ```
 IOHLCSource:
+├── int Count
 ├── IReadOnlyList<OHLC> GetOHLCs()
 ├── AxisLimits GetLimits()
 ├── CoordinateRange GetLimitsX() / GetLimitsY()
@@ -335,9 +340,12 @@ interface IDataSource
 ## 八、拓展方法：渲染索引控制
 
 ```csharp
-// ReadOnlyListExtensions:
+// DataSourceUtilities.cs 中针对 IDataSource 的扩展方法:
 this.GetRenderIndexCount()    → MaxRenderIndex - MinRenderIndex + 1
-this.GetRenderIndexRange()    → (MinRenderIndex, MaxRenderIndex)
+this.GetRenderIndexRange()    → IndexRange (MinRenderIndex, MaxRenderIndex)
+
+// DataSources/ReadOnlyListExtensions.cs（internal）提供的惰性视图:
+this.SelectView(selector)     → 投影视图 (不拷贝)
 this.SkipView(n)              → IReadOnlyList 视图 (不拷贝)
 this.TakeView(n)              → IReadOnlyList 视图 (不拷贝)
 this.ZipView(other, selector) → 延迟 Zip 视图 (不拷贝)
@@ -354,16 +362,17 @@ this.ZipView(other, selector) → 延迟 Zip 视图 (不拷贝)
   ├── 等间距? (X[i] = i * period + offset)
   │     ├── 是 → 用 ISignalSource
   │     │     ├── 静态数据 → SignalSourceDouble (带 SegmentedTree)
-  │     │     ├── 实时追加 → DataLogger + FastSignalSourceDouble (带 MinMaxCache)
-  │     │     ├── 实时滑动 → DataStreamerSource
-  │     │     └── 常量值  → SignalConstSource<T> (O(1) 最优化)
+  │     │     ├── 静态大数组（数值类型） → SignalConst (内部 SignalConstSource + SegmentedTree)
+  │     │     ├── 手动优化频繁更新的等间距序列 → FastSignalSourceDouble (带 MinMaxCache)
+  │     │     └── 实时滑动窗口 → DataStreamerSource
   │     └── 否 → 用 IScatterSource
   │           ├── 已有 double[] xs, ys → ScatterSourceDoubleArray
   │           ├── 已有 Coordinates[]    → ScatterSourceCoordinatesArray
   │           └── 自定义类型 T[]        → ScatterSourceGenericArray<T>
   │
   ├── 金融OHLC? → IOHLCSource → OHLCSourceArray / OHLCSourceList
-  ├── 向量/箭头? → VectorFieldDataSourceCoordinatesList
+  ├── 持续累积采集? → DataLogger (DataLoggerSource，List 缓冲，与 Signal 源无关)
+  ├── 向量/箭头? → VectorFieldDataSourceCoordinatesList (IVectorFieldSource)
   └── 函数/数学? → FunctionSource
 ```
 
@@ -371,7 +380,7 @@ this.ZipView(other, selector) → 延迟 Zip 视图 (不拷贝)
 
 ## 十、关键设计洞察
 
-1. **包装器自动装饰**：`PlottableAdder` 创建数据源时自动包裹 `CacheScatterLimitsDecorator`，对用户透明，但大幅减少 `GetLimits()` 重复计算。
+1. **装饰器可选而非自动**：`CacheScatterLimitsDecorator` 随库提供（文件 ScatterSourceWithCachedLimits.cs），但 `PlottableAdder` **不会自动包裹**——核心库中没有实例化点。数据静态时可手动套用以缓存 GetLimits() 结果。
 
 2. **惰性求值体系**：`ZipView` / `SkipView` / `TakeView` 构建了一个零拷贝的 `IReadOnlyList` 视图链，百万级数据的 `GetScatterPoints()` 不分配额外数组。
 

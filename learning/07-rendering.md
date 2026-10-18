@@ -1,6 +1,6 @@
 # ScottPlot 5 渲染管道深度剖析
 
-> 25 个 RenderAction + RenderManager + RenderPack · ~1,200 行核心调度代码
+> 25 个 RenderAction + RenderManager + RenderPack · RenderManager 仅 ~180 行（177 行），每步一个独立类
 
 ---
 
@@ -12,7 +12,7 @@
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  触发源:                                                     │
-│  Plot.Refresh()  Plot.SavePng()  PlotControl.Invalidate()   │
+│  control.Refresh()  Plot.SavePng()  平台控件 Invalidate()    │
 │        │                                                     │
 │        ▼                                                     │
 │  RenderManager.Render(SKCanvas, PixelRect)                  │
@@ -36,6 +36,8 @@
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+**注意**：`Plot` 本身没有 `Refresh()` 方法——它是 `IPlotControl` 的成员（[IPlotControl.cs](file:///d:/dev/store/ScottPlot/src/ScottPlot5/ScottPlot5/Interfaces/IPlotControl.cs#L18)）。平台控件的 `Invalidate()` 只是触发重绘事件，最终仍走 `control.Refresh()`。
 
 ---
 
@@ -131,9 +133,12 @@ public void Render(RenderPack rp)
     }
     else
     {
-        // 无数据 → 使用默认范围 [-10, 10]
-        plot.Axes.SetLimitsX(AxisLimits.Default);
-        plot.Axes.SetLimitsY(AxisLimits.Default);
+        // 无可见数据 → 仅对未手动设置范围的底/左轴应用默认范围 [-10, 10]
+        if (!plot.Axes.Bottom.Range.HasBeenSet)
+            plot.Axes.SetLimitsX(AxisLimits.Default);
+
+        if (!plot.Axes.Left.Range.HasBeenSet)
+            plot.Axes.SetLimitsY(AxisLimits.Default);
     }
 }
 ```
@@ -163,13 +168,14 @@ FigureRect (画布总区域)
     └──────────────────────────────────────────────────────
 ```
 
-**Layout** 结果包含：
+**Layout** 结果包含（`readonly struct`，定义于 [Layout.cs](file:///d:/dev/store/ScottPlot/src/ScottPlot5/ScottPlot5/Primitives/Layout.cs#L3)）：
 ```csharp
-class Layout
+public readonly struct Layout
 {
-    PixelRect DataRect;           // 数据绘制区域
-    PanelSizes 各面板尺寸;        // 用于位置计算
-    FractionRect LegendRect;     // 图例区域（百分比坐标）
+    PixelRect FigureRect;                     // 计算布局时的图表区域
+    PixelRect DataRect;                       // 数据绘制区域
+    Dictionary<IPanel, float> PanelSizes;     // 各面板尺寸（垂直于数据区边缘）
+    Dictionary<IPanel, float> PanelOffsets;   // 各面板距数据区边缘的偏移
 }
 ```
 
@@ -224,7 +230,7 @@ public void Render(RenderPack rp)
 
 ```
 条件: 仅当 plot.Axes.ContinuouslyAutoscale 为 true 时启用
-行为: 每次渲染后调整轴范围，使所有数据始终可见
+行为: 调用 plot.Axes.ContinuousAutoscaleAction.Invoke(rp) 调整轴范围，使所有数据始终可见
 场景: 实时数据流、动画
 ```
 
@@ -268,12 +274,14 @@ RenderManager 事件:
 ## 八、OpenGL 支持路径
 
 ```
-IPlottableGL 接口:
-├── PlotControl  { get; }        ← 获取 GRContext
-├── GRContext    (SkiaSharp)     ← GPU 渲染上下文
+IPlottableGL 接口 (继承 IPlottable):
+├── PlotControl    { get; }     ← 渲染时经它访问 GRContext (GPU 上下文)
+├── GLFinish()                  ← 手动同步 GPU 渲染
+├── StoreGLState()              ← 保存 OpenGL 状态
+└── RestoreGLState()            ← 恢复 OpenGL 状态
 
 支持 IPlottableGL 的 Plottable:
-└── CandlestickPlot  (大量蜡烛图用 GPU 加速)
+└── ScatterGL  (位于 ScottPlot.OpenGL 扩展包, 核心库无任何实现者)
 
 GL 相关 RenderActions:
 ├── StoreGLState (14)  → 备份 GL 状态
@@ -304,14 +312,17 @@ plot.RenderManager.RenderActions.AddRange([...]);
 每个 `RenderOnce` 调用都会记录每步的耗时：
 
 ```csharp
-RenderDetails:
+RenderDetails (readonly struct):
 ├── Elapsed: TimeSpan             ← 总渲染时间
 ├── TimedActions: (string, TimeSpan)[]  ← 每步耗时
 │   e.g. [("PreRenderLock", 0ms), ("ClearCanvas", 0.5ms),
 │          ("CalculateLayout", 2ms), ("RenderPlottables", 45ms), ...]
-├── RenderCount                   ← 渲染总次数
-└── RenderBenchmark (RenderAction) ← 在图像右上角绘制性能文字
+├── Count: int                    ← 渲染总次数 (含本次)
+├── AxisLimitsChanged / SizeChanged: bool  ← 与上次渲染对比的变化标记
+└── Layout / AxisLimitsByAxis     ← 布局结果与所有轴的范围快照
 ```
+
+第 25 步的 `RenderBenchmark` 是独立的 RenderAction（在图像右上角绘制性能文字），不属于 RenderDetails。
 
 ---
 

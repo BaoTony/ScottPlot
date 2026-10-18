@@ -1,6 +1,6 @@
 # ScottPlot 5 全数据链路总览
 
-> 本文是 5 条核心链路的**鸟瞰图**。各链路的深度剖析见对应分层文档（02-07），本文不重复其内容。
+> 本文是 5 条核心链路的**鸟瞰图**。各链路的深度剖析见对应分层文档（04-09），本文不重复其内容。
 
 ---
 
@@ -48,7 +48,7 @@ ScottPlot 5 的数据流可归纳为 **5 条核心链路**，覆盖从"用户写
 Scatter 路径 (离散):
 用户数据 (double[] xs, ys)
   → PlottableAdder.Scatter() 自动包装为 ScatterSourceDoubleArray
-      （并自动包裹 CacheScatterLimitsDecorator 缓存 Limits）
+      （ZipView 惰性视图；CacheScatterLimitsDecorator 仅是可选工具类，不会自动包裹）
   → Scatter.Render(rp)
       ① Data.GetScatterPoints() → Coordinates[]（ZipView 惰性视图，零拷贝）
       ② Axes.GetPixel() → 坐标→像素转换
@@ -74,10 +74,11 @@ Signal 路径 (等间距大数据):
 | `ISignalSource` | Signal | 等间距大数据 |
 | `ISignalXYSource` | SignalXY | 不等间距大数据 |
 | `IOHLCSource` | OHLC / Candlestick | K线图 |
-| `IErrorBarSource` | ErrorBar | 误差棒 |
-| `IVectorSource` | VectorField | 矢量场 |
+| `IVectorFieldSource` | VectorField | 矢量场 |
 | `IFunctionSource` | FunctionPlot | 函数绘图 |
-| `IHeatmapSeries` | Heatmap | 热力图数据 |
+
+> 注意：部分图表不走数据源接口——ErrorBar 直接持有 `IReadOnlyList` 属性，
+> Heatmap 直接接收 `double[,]` / `Coordinates3d[,]` 矩阵（源码 Plottables/ErrorBar.cs、Heatmap.cs）。
 
 > 数据源选型决策树与实现矩阵：见 [05-datasources](./05-datasources.md)。
 
@@ -89,9 +90,9 @@ Signal 路径 (等间距大数据):
 用户代码                         ScottPlot 内部
 ──────────────────────────────────────────────────
 Plot myPlot = new();         →  创建 Plot 对象
-  ├─ PlottableAdder Add      →  工厂方法集合（~60 个 Add.XXX()）
+  ├─ PlottableAdder Add      →  工厂方法集合（127 个 Add.XXX()，含重载，去重后 74 个方法名）
   ├─ PlottableList           →  List<IPlottable>
-  ├─ AxisManager Axes        →  5 轴管理
+  ├─ AxisManager Axes        →  4 条标准轴管理（Bottom/Left + Top/Right）
   ├─ RenderManager           →  25 步渲染管道
   └─ Legend                  →  图例
 
@@ -112,11 +113,11 @@ scatter.LineWidth = 3;       →  属性转发，直接改 LineStyle.Width（无
 ### 3.1 触发方式
 
 ```
-① 显式调用: plot.Render(canvas)   ← 手动渲染到 SKCanvas
-② 自动触发: plot.Refresh()        ← PlotControl 自动管理
-③ 数据更新: scatter.DataChanged   ← 标记脏状态后下一次 Refresh
+① 显式调用: plot.Render(SKCanvas, PixelRect)  ← 手动渲染（另有 Render(SKSurface) 等重载）
+② 自动触发: control.Refresh()     ← IPlotControl.Refresh()，控件层 API（Plot 本身无 Refresh）
+③ 数据更新: 修改数据后需手动重绘   ← 核心库无 DataChanged 脏标记机制，改完数据必须再调 Render/Refresh
 ④ 事件触发: RenderFinished 事件   ← 订阅者响应
-⑤ 静态导出: plot.SavePng()        ← 内部 Build→Render→Encode
+⑤ 静态导出: plot.SavePng()        ← 内部 GetImage → Render → Encode
 ```
 
 ### 3.2 25 步管道关键步骤（摘录）
@@ -131,7 +132,7 @@ scatter.LineWidth = 3;       →  属性转发，直接改 LineStyle.Width（无
 24  RenderPlottablesLast      ★ 绘制 IRenderLast Plottable（覆盖在轴上方）
 ```
 
-**隔离原则**：每个 RenderAction 前后自动 `CanvasState.Save()` / `RestoreAll()`，各步骤绘制状态互不影响（详见 05）。
+**隔离原则**：每个 RenderAction 前后自动 `CanvasState.Save()` / `RestoreAll()`，各步骤绘制状态互不影响（详见 07-rendering）。
 
 ### 3.3 Plottable.Render() 内部坐标转换
 
@@ -213,5 +214,6 @@ plot.SavePng("chart.png", 800, 600)
 多图元        视口裁剪                  rp.DataRect.Contains(pixel)
 实时更新      DataLogger/DataStreamer   Plottables/DataLogger.cs
 OpenGL 加速   IPlottableGL + 自定义     GL 相关 RenderActions
-多轴图        AxisManager              Plot.Axes (5轴: Bottom/Top/Left/Right/Color)
+多轴图        AxisManager              Plot.Axes（4 条标准轴：Bottom/Left 主轴默认显示，
+                                       Top/Right 副轴用于右侧刻度；ColorBar 走 Panels）
 ```
