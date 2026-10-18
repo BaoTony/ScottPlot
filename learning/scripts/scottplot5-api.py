@@ -4,7 +4,8 @@
 用途：基于 tree-sitter 语法解析（语法级准确，支持多行签名/泛型/元组参数/
       默认值/扩展方法/索引器）提取核心库 ScottPlot5 全部对外公开 API：
       类型（class/struct/interface/record/enum/delegate）及其 public
-      方法、属性、字段、事件、运算符、构造函数的完整签名，按命名空间
+      方法、属性、字段、事件、运算符、构造函数的完整签名，并提取声明
+      上方紧邻的 /// XML 文档注释（<summary> 内文）作为说明，按命名空间
       分组输出，供 learning/ 下各编号文档做成员级口径核查与版本 diff。
 
 口径：声明口径，仅 public（含嵌套 public 类型/成员）；
@@ -110,6 +111,21 @@ def signature_of(src, node):
     return re.sub(r'\s+', ' ', sig).strip()
 
 
+def doc_text_from_lines(lines):
+    """把紧邻声明上方的 /// 注释行解析为单行纯文本摘要。
+
+    优先取 <summary> 内文；无 summary 标签时取全部文档文本；
+    去掉内嵌 XML 标签（如 <param>、<returns>）并压缩空白。
+    """
+    if not lines:
+        return ''
+    text = '\n'.join(lines)
+    m = re.search(r'<summary>(.*?)</summary>', text, re.S)
+    inner = m.group(1) if m else text
+    inner = re.sub(r'<[^>]+>', ' ', inner)   # 清除残留的 XML 标签
+    return re.sub(r'\s+', ' ', inner).strip()
+
+
 def accessors_of(src, prop_node):
     """从属性节点的 accessor_list 中提取访问器名（get/set/init）。
 
@@ -151,11 +167,12 @@ def param_is_extension(src, method_node):
     return False
 
 
-def walk_type(src, node, ns, file_rel, parent_public, stats):
+def walk_type(src, node, ns, file_rel, parent_public, stats, doc=''):
     """递归遍历一个类型声明节点，产出该类型及其嵌套类型的 API 记录。
 
     parent_public 控制可见性传导：外层类型非 public 时，嵌套类型即使
     声明为 public 也不属于对外 API（C# 可访问性规则）。
+    doc 为声明上方紧邻 /// 注释解析出的摘要文本。
     """
     kind = TYPE_KINDS.get(node.type)
     if kind is None:
@@ -165,21 +182,35 @@ def walk_type(src, node, ns, file_rel, parent_public, stats):
     # 类型签名：从声明起截到类型体/分号之前（record 主构造参数、基类列表、约束全含）
     type_sig = signature_of(src, node)
     if not pub:
-        # 非 public 类型：仅嵌套的 public 类型不可能存在（外层已不可见），直接返回
+        # 非 public 类型：其内部即使有 public 声明也不对外可见，直接返回
         return None
     stats['types'] += 1
-    record = {'name': name, 'kind': kind, 'signature': type_sig,
+    if doc:
+        stats['docs'] += 1
+    record = {'name': name, 'kind': kind, 'signature': type_sig, 'doc': doc,
               'file': file_rel, 'members': [], 'enum_members': [], 'nested': []}
 
-    # 遍历类型体内的成员与嵌套类型
+    # 遍历类型体内的成员与嵌套类型；pending 跟踪成员上方紧邻的 /// 注释块
+    pending = []
     body = node.child_by_field_name('body')
     if body is not None:
         for c in body.children:
-            m = collect_member(src, c, ns, name, stats)
+            if c.type == 'comment':
+                t = node_text(src, c).strip()
+                if t.startswith('///'):
+                    pending.append(t[3:].strip())
+                else:
+                    # 普通 // 或 /* */ 注释会打断 /// 文档块
+                    pending = []
+                continue
+            # 到达声明节点：先把累积的 /// 注释解析为摘要，再清空 pending
+            doc_text = doc_text_from_lines(pending)
+            pending = []
+            m = collect_member(src, c, ns, name, stats, doc_text)
             if m is not None:
                 record['members'].append(m)
             elif c.type in TYPE_KINDS:
-                sub = walk_type(src, c, ns, file_rel, True, stats)
+                sub = walk_type(src, c, ns, file_rel, True, stats, doc_text)
                 if sub is not None:
                     record['nested'].append(sub)
             elif c.type == 'enum_member_declaration_list' and kind == 'enum':
@@ -189,7 +220,7 @@ def walk_type(src, node, ns, file_rel, parent_public, stats):
     return record
 
 
-def collect_member(src, node, ns, owner, stats):
+def collect_member(src, node, ns, owner, stats, doc=''):
     """提取单个成员声明节点的 API 记录（非 public 成员返回 None）"""
     kind = MEMBER_KINDS.get(node.type)
     if kind is None:
@@ -205,9 +236,11 @@ def collect_member(src, node, ns, owner, stats):
         if accs:
             sig += ' { ' + ', '.join(accs) + '; }'
     stats['members'] += 1
+    if doc:
+        stats['docs'] += 1
     stats['by_kind'][kind] = stats['by_kind'].get(kind, 0) + 1
     extra = ' [扩展方法]' if kind == 'method' and param_is_extension(src, node) else ''
-    return {'kind': kind, 'name': name, 'signature': sig + extra}
+    return {'kind': kind, 'name': name, 'signature': sig + extra, 'doc': doc}
 
 
 def parse_file(path, rel):
@@ -229,7 +262,7 @@ def parse_file(path, rel):
             block_body = c.child_by_field_name('body')
             break
 
-    stats = {'types': 0, 'members': 0, 'by_kind': {}}
+    stats = {'types': 0, 'members': 0, 'docs': 0, 'by_kind': {}}
     types = []
     # 声明位置随命名空间形式而异（tree-sitter 语法的关键差异）：
     # - 块级 namespace：类型在 namespace 的 body 内
@@ -239,9 +272,19 @@ def parse_file(path, rel):
         candidates = list(root.children)
     else:
         candidates = list(block_body.children) if block_body is not None else []
+    # pending 跟踪类型声明上方紧邻的 /// 注释块（逻辑与 walk_type 内一致）
+    pending = []
     for c in candidates:
+        if c.type == 'comment':
+            t = node_text(src, c).strip()
+            if t.startswith('///'):
+                pending.append(t[3:].strip())
+            else:
+                pending = []
+            continue
         if c.type in TYPE_KINDS:
-            t = walk_type(src, c, ns, rel, True, stats)
+            t = walk_type(src, c, ns, rel, True, stats, doc_text_from_lines(pending))
+            pending = []
             if t is not None:
                 types.append(t)
     return ns, types, stats
@@ -250,7 +293,7 @@ def parse_file(path, rel):
 def collect_all(core_dir):
     """扫描核心库全部 .cs 文件，汇总为按命名空间分组的 API 清单"""
     namespaces = OrderedDict()
-    totals = {'types': 0, 'members': 0, 'by_kind': {}}
+    totals = {'types': 0, 'members': 0, 'docs': 0, 'by_kind': {}}
     files = sorted(
         os.path.join(root, f)
         for root, dirs, fs in os.walk(core_dir)
@@ -266,6 +309,7 @@ def collect_all(core_dir):
         buckets.extend(types)
         totals['types'] += stats['types']
         totals['members'] += stats['members']
+        totals['docs'] += stats.get('docs', 0)
         for k, v in stats['by_kind'].items():
             totals['by_kind'][k] = totals['by_kind'].get(k, 0) + v
     # 各命名空间内按类型名排序，保证多次生成的清单可稳定 diff
@@ -287,22 +331,34 @@ def build_markdown(namespaces, totals):
         lines.append(f'| `{ns}` | {len(types)} | {n_members} |')
     lines += ['', f'**合计：{totals["types"]} 个类型，'
               f'{totals["members"]} 个成员（' +
-              '，'.join(f'{k} {v}' for k, v in sorted(totals["by_kind"].items())) + '）', '']
-    # 逐命名空间展开：类型签名 + 成员签名代码块
+              '，'.join(f'{k} {v}' for k, v in sorted(totals["by_kind"].items())) +
+              f'），其中 {totals["docs"]} 项带官方 /// 注释摘要**', '']
+    # 逐命名空间展开：类型签名 + 注释摘要 + 成员签名（注释以 // 行内嵌）
     for ns, types in namespaces.items():
         lines += [f'## {ns}', '']
         for t in types:
-            lines += [f'### `{t["signature"]}`', f'<!-- {t["file"]} -->', '```csharp']
+            lines += [f'### `{t["signature"]}`', f'<!-- {t["file"]} -->']
+            if t.get('doc'):
+                lines.append(f'> {t["doc"]}')
+            lines += ['', '```csharp']
             lines += [t['signature']]
             if t['enum_members']:
                 lines.append('成员: ' + ', '.join(t['enum_members']))
             for m in t['members']:
+                if m.get('doc'):
+                    lines.append('// ' + m['doc'])
                 lines.append(m['signature'])
             lines += ['```', '']
             for sub in t['nested']:
-                lines += [f'### `{sub["signature"]}`（嵌套于 {t["name"]}）',
-                          '```csharp']
-                lines += [sub['signature']] + [m['signature'] for m in sub['members']]
+                lines += [f'### `{sub["signature"]}`（嵌套于 {t["name"]}）']
+                if sub.get('doc'):
+                    lines.append(f'> {sub["doc"]}')
+                lines += ['', '```csharp']
+                lines += [sub['signature']]
+                for m in sub['members']:
+                    if m.get('doc'):
+                        lines.append('// ' + m['doc'])
+                    lines.append(m['signature'])
                 lines += ['```', '']
     return '\n'.join(lines)
 
