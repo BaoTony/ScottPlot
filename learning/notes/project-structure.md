@@ -64,7 +64,7 @@ Solution 'ScottPlot5'
 
 VS 的 Solution Explorer 使用 **Solution Folder**（虚拟文件夹）来分组项目，这只在 `.sln` 文件中定义，和物理磁盘目录无关。上面的结构就是精解 `.sln` 中 `NestedProjects` 的映射关系。
 
-例如磁盘上的 `ScottPlot5 Controls/` 下有 9 个子目录，但在 VS 中它们被折叠到虚拟 `Controls/` 文件夹下，且不显示中间目录名。
+例如磁盘上的 `ScottPlot5 Controls/` 下有 8 个子目录，但在 VS 中它们被折叠到虚拟 `Controls/` 文件夹下，且不显示中间目录名。
 
 ### 各虚拟文件夹用途
 
