@@ -267,7 +267,9 @@ def main():
     results['primitives'] = primitives
 
     section('四、核心库接口（interface）统计')
-    iface_re = re.compile(r'\binterface\s+(I\w+)')
+    # 口径：只统计 public 接口（与反射 IsPublic/IsNestedPublic 一致），
+    # 排除 internal 接口（如 INamedColors、IHasLabel）
+    iface_re = re.compile(r'\bpublic\s+interface\s+(I\w+)')
     ifaces_by_dir = {}
     for path in cs_files(CORE):
         rel = os.path.relpath(path, CORE)
@@ -276,7 +278,7 @@ def main():
         if names:
             ifaces_by_dir.setdefault(top, []).extend(names)
     total_ifaces = sum(len(v) for v in ifaces_by_dir.values())
-    out(f'  合计 {total_ifaces} 个接口，分布：')
+    out(f'  合计 {total_ifaces} 个 public 接口，分布：')
     for top, names in sorted(ifaces_by_dir.items(), key=lambda kv: -len(kv[1])):
         preview = ', '.join(sorted(names)[:6])
         more = f' ...' if len(names) > 6 else ''
@@ -305,7 +307,7 @@ def main():
     results['data_sources'] = [
         {'name': n, 'kind': k, 'bases': b} for n, k, b in sorted(impl_types)]
 
-    # 主口径 = .cs 文件数；按类声明识别 IPlottable 实现类名仅作交叉核对
+    # 主口径 = .cs 文件数；IPlottable 实现类数通过全核心库继承闭包精确计算
     section('六、Plottable 图表类（实现 IPlottable）')
     plottables_dir = os.path.join(CORE, 'Plottables')
     all_plottable_files = cs_files(plottables_dir)
@@ -320,17 +322,31 @@ def main():
     out(f'  Plottables 根目录          {len(root_files):3d} 个')
     out(f'  Plottables 合计            {len(all_plottable_files):3d} 个（= 根目录 + 各子目录）')
 
-    # 辅助口径：从类声明提取 IPlottable 实现类名（部分类经 PlottableBase 间接实现）
-    iplottable_re = re.compile(r'class\s+(\w+)\b[^:;\n]*:\s*([^\n{]*IPlottable[^\n{]*)')
-    normal, interactive = [], []
-    for path in all_plottable_files:
+    # IPlottable 实现类：扫描整个核心库构建继承图，计算传递闭包
+    # （部分类经 PieBase / AxisLine / HittablePlottableDecorator 等基类间接实现，
+    #  且 Legend 等个别实现类位于 Plottables/ 之外，故必须全库扫描）
+    decl_re = re.compile(r'\b(?:class|record(?:\s+struct)?|struct)\s+(\w+)\b[^:;\n{]*:\s*([^{]+)', re.S)
+    name_bases = {}            # 类型名 -> 基类/接口名集合
+    name_file = {}             # 类型名 -> 所在文件（用于判断 Interactive）
+    for path in cs_files(CORE):
         code = strip_comments(read(path))
-        for m in iplottable_re.finditer(code):
-            name = m.group(1)
-            (interactive if 'Interactive' in name or os.sep + 'Interactive' + os.sep in path
-             else normal).append(name)
-    out(f'  （按类声明识别：常规 {len(normal)} 个，Interactive {len(interactive)} 个；'
-        f'部分类经由 PlottableBase 间接实现 IPlottable，故文件数为准）')
+        for m in decl_re.finditer(code):
+            name_bases[m.group(1)] = set(re.findall(r'\b[A-Z]\w*\b', m.group(2)))
+            name_file[m.group(1)] = path
+    direct_impl = {n for n, bs in name_bases.items() if 'IPlottable' in bs}
+    iplottable_impl = set(direct_impl)
+    changed = True
+    while changed:
+        changed = False
+        for n, bs in name_bases.items():
+            if n not in iplottable_impl and bs & iplottable_impl:
+                iplottable_impl.add(n)
+                changed = True
+    normal = [n for n in iplottable_impl
+              if not ('Interactive' in n or os.sep + 'Interactive' + os.sep in name_file.get(n, ''))]
+    interactive = [n for n in iplottable_impl if n not in normal]
+    out(f'  IPlottable 实现类（继承闭包）：{len(iplottable_impl)} 个'
+        f'（常规 {len(normal)}，Interactive {len(interactive)}）')
     results['plottables'] = {
         'by_dir': by_dir, 'root': len(root_files), 'total': len(all_plottable_files),
         'by_class_declaration': {'normal': len(normal), 'interactive': len(interactive)},

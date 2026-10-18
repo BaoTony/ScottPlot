@@ -68,16 +68,15 @@
 | interface | 2 | IAutoScaler, IAxisLimitManager |
 | enum | 21 | Alignment, ArrowAnchor, ArrowShape, AxisGradientDirection, ConnectStyle, Cursor, Edge, FontSlant 等 |
 
-## 四、核心库接口统计（合计 63 个）
+## 四、核心库接口统计（合计 61 个）
 
 | 目录 | 个数 | 接口（最多列 6 个） |
 |---|---:|---|
-| Interfaces | 51 | IArrowShape, IAxes, IAxis, IAxisRule, IColormap, IDataSource … |
+| Interfaces | 50 | IArrowShape, IAxes, IAxis, IAxisRule, IColormap, IDataSource … |
 | Interactivity | 4 | IMouseAction, IMouseButtonAction, IUserAction, IUserActionResponse |
 | Primitives | 2 | IAutoScaler, IAxisLimitManager |
 | TickGenerators | 2 | IDateTimeTickGenerator, ITimeUnit |
 | DataViews | 1 | IDataStreamerView |
-| NamedColors | 1 | INamedColors |
 | Plottables | 1 | IRenderStrategy |
 | Triangulation | 1 | IEdge |
 
@@ -128,7 +127,7 @@
 | Plottables 根目录 | 61 |
 | **合计** | **72** |
 
-（按类声明识别：常规 54 个，Interactive 10 个；部分类经由 PlottableBase 间接实现 IPlottable，故以文件数为准）
+（按类声明识别：常规 60 个，Interactive 10 个；部分类经由 PlottableBase 间接实现 IPlottable，故以文件数为准）
 
 ## 七、RenderManager 渲染管线步骤
 

@@ -65,13 +65,12 @@ ScottPlot5 版本：5.1.60
 ==============================================================================
 四、核心库接口（interface）统计
 ==============================================================================
-  合计 63 个接口，分布：
-    Interfaces              51 个  IArrowShape, IAxes, IAxis, IAxisRule, IColormap, IDataSource ...
+  合计 61 个 public 接口，分布：
+    Interfaces              50 个  IArrowShape, IAxes, IAxis, IAxisRule, IColormap, IDataSource ...
     Interactivity            4 个  IMouseAction, IMouseButtonAction, IUserAction, IUserActionResponse
     Primitives               2 个  IAutoScaler, IAxisLimitManager
     TickGenerators           2 个  IDateTimeTickGenerator, ITimeUnit
     DataViews                1 个  IDataStreamerView
-    NamedColors              1 个  INamedColors
     Plottables               1 个  IRenderStrategy
     Triangulation            1 个  IEdge
 
@@ -119,7 +118,7 @@ ScottPlot5 版本：5.1.60
   Plottables/Interactive           10 个
   Plottables 根目录           61 个
   Plottables 合计             72 个（= 根目录 + 各子目录）
-  （按类声明识别：常规 54 个，Interactive 10 个；部分类经由 PlottableBase 间接实现 IPlottable，故文件数为准）
+  IPlottable 实现类（继承闭包）：70 个（常规 60，Interactive 10）
 
 ==============================================================================
 七、RenderManager 渲染管线步骤

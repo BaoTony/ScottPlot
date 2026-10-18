@@ -192,7 +192,7 @@
     ]
   },
   "interfaces": {
-    "total": 63,
+    "total": 61,
     "by_dir": {
       "DataViews": [
         "IDataStreamerView"
@@ -220,7 +220,6 @@
         "IHasColorAxis",
         "IHasFill",
         "IHasInteractiveHandles",
-        "IHasLabel",
         "IHasLegendText",
         "IHasLine",
         "IHasMarker",
@@ -255,9 +254,6 @@
         "IXAxis",
         "IYAxis",
         "IZoomRectangle"
-      ],
-      "NamedColors": [
-        "INamedColors"
       ],
       "Plottables": [
         "IRenderStrategy"
@@ -454,7 +450,7 @@
     "root": 61,
     "total": 72,
     "by_class_declaration": {
-      "normal": 54,
+      "normal": 60,
       "interactive": 10
     }
   },
