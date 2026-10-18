@@ -1,6 +1,6 @@
 # ScottPlot 5 项目结构导航
 
-> 本文是源码地图，深度分析见各分层文档（04-09）· 2026-10-18
+> 本文是源码地图，深度分析见各分层文档（02-09）· 2026-08-18
 
 ---
 
@@ -54,12 +54,12 @@ Solution 'ScottPlot5'
 
 | 目录 | 定位 | 详见 |
 |---|---|---|
-| Primitives/ | 原子数据结构（坐标/颜色/样式/几何） | [04](04-primitives.md) |
-| Interfaces/ | 核心接口（策略模式插入点） | [04](04-primitives.md) |
-| DataSources/ | 数据源实现（Scatter/Signal/OHLC/实时流） | [05](05-datasources.md) |
-| Plottables/ | 可绘制物（根 + Interactive） | [06](06-plottables.md) |
-| Rendering/ | 渲染管道（1 Manager + 25 Actions） | [07](07-rendering.md) |
-| Interactivity/ | 交互系统 | [08](08-interactivity.md) |
+| Primitives/ | 原子数据结构（坐标/颜色/样式/几何） | [02](02-primitives.md) |
+| Interfaces/ | 核心接口（策略模式插入点） | [02](02-primitives.md) |
+| DataSources/ | 数据源实现（Scatter/Signal/OHLC/实时流） | [03](03-datasources.md) |
+| Plottables/ | 可绘制物（根 + Interactive） | [04](04-plottables.md) |
+| Rendering/ | 渲染管道（1 Manager + 25 Actions） | [05](05-rendering.md) |
+| Interactivity/ | 交互系统 | [06](06-interactivity.md) |
 | TickGenerators/ | 刻度生成（Numeric/DateTime/Financial/Log） | — |
 | LayoutEngines/ | 5 种布局引擎 | — |
 | AxisPanels/ | 轴面板（Bottom/Left/Top/Right 等） | — |
@@ -68,10 +68,10 @@ Solution 'ScottPlot5'
 | AutoScalers/ | 自动缩放策略 | — |
 | Panels/ | 图表面板（标题/图例/ColorBar） | — |
 | Grids/ | 网格线 | — |
-| Markers/ | 预设标记形状 | [04](04-primitives.md) |
-| ArrowShapes/ | 箭头形状 | [04](04-primitives.md) |
-| Colormaps/ | 科学配色方案 | [04](04-primitives.md) |
-| Palettes/ | 分类调色板 | [04](04-primitives.md) |
+| Markers/ | 预设标记形状 | [02](02-primitives.md) |
+| ArrowShapes/ | 箭头形状 | [02](02-primitives.md) |
+| Colormaps/ | 科学配色方案 | [02](02-primitives.md) |
+| Palettes/ | 分类调色板 | [02](02-primitives.md) |
 | PathStrategies/ | 连线策略（直线/样条/阶梯） | — |
 | Statistics/ | 统计计算（直方图/线性回归/核密度） | — |
 | Finance/ | 金融指标（Bollinger/移动平均） | — |
@@ -93,7 +93,7 @@ Solution 'ScottPlot5'
 
 ## 三、跨平台控件
 
-> 详见 [09-controls.md](09-controls.md)
+> 详见 [07-controls.md](07-controls.md)
 
 | 项目 | NuGet 包 |
 |---|---|

@@ -12,7 +12,7 @@
   → IXXXSource（本章主角）
       Scatter:  GetScatterPoints() → Coordinates[]（ZipView 惰性视图，零拷贝）
       Signal:   GetPixelColumns() → SegmentedTree 降采样 → 每像素列画 min→max
-  → IPlottable.Data（→ 06-plottables）
+  → IPlottable.Data（→ 04-plottables）
 
 导出链路: plot.SavePng() → GetImage(800,600) → RenderManager.Render() → Encode
                                   ↑ 与交互渲染共用同一管道

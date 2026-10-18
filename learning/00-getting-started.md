@@ -1,6 +1,6 @@
 # ScottPlot 5 新手入门
 
-> 跨平台 .NET 图表库 · WinForms / WPF / Avalonia / Blazor / MAUI / WinUI · 2026-10-18
+> 跨平台 .NET 图表库 · WinForms / WPF / Avalonia / Blazor / MAUI / WinUI · 2026-08-18
 
 ---
 
@@ -44,11 +44,11 @@ myPlot.SavePng("chart.png", 800, 600);
 
 | 链路 | 路径 | 详析 |
 |---|---|---|
-| 数据源 | 用户数据 → IXXXSource → 坐标推算 | [05](05-datasources.md) |
-| 构造 | Plot.Add.XXX() → PlottableAdder → PlottableList | [06](06-plottables.md) |
-| 渲染 | Refresh() → RenderManager → 25 步 → SKCanvas | [07](07-rendering.md) |
-| 交互 | 鼠标/键盘 → UserInputProcessor → 响应器 → Refresh | [08](08-interactivity.md) |
-| 导出 | SavePng() → GetImage() → Render → Encode | [05](05-datasources.md) |
+| 数据源 | 用户数据 → IXXXSource → 坐标推算 | [03](03-datasources.md) |
+| 构造 | Plot.Add.XXX() → PlottableAdder → PlottableList | [04](04-plottables.md) |
+| 渲染 | Refresh() → RenderManager → 25 步 → SKCanvas | [05](05-rendering.md) |
+| 交互 | 鼠标/键盘 → UserInputProcessor → 响应器 → Refresh | [06](06-interactivity.md) |
+| 导出 | SavePng() → GetImage() → Render → Encode | [03](03-datasources.md) |
 
 ---
 
@@ -167,7 +167,7 @@ myPlot.Grid.MajorLineColor = Colors.Gray.WithAlpha(0.3);
 4. **`PixelRect` 和 `CoordinateRect` 的 Y 轴方向相反** — 屏幕坐标 Y 向下，笛卡尔坐标 Y 向上。
 5. **`SignalConst` 已标记为过时** — 新代码直接用 `Signal`。
 
-> 全部 29 条陷阱：见 [10-usage-caveats.md](10-usage-caveats.md)。
+> 全部 29 条陷阱：见 [08-usage-caveats.md](08-usage-caveats.md)。
 
 ---
 
@@ -194,10 +194,10 @@ dotnet build ScottPlot5/ScottPlot.csproj  # 仅核心库 ~15s
 
 ## 七、下一步
 
-按文件名编号 00 → 10 依次阅读即可。建议节奏：
+按文件名编号 00 → 08 依次阅读即可。建议节奏：
 
 | 阶段 | 文档 | 内容 |
 |---|---|---|
-| 导航 | [02-project-structure.md](02-project-structure.md) | 源码地图 |
-| 分层（3 天） | [04](04-primitives.md) → [05](05-datasources.md) → [06](06-plottables.md) → [07](07-rendering.md) → [08](08-interactivity.md) → [09](09-controls.md) | 自底向上：原子层 → 控件层 |
-| 全程 | [10-usage-caveats.md](10-usage-caveats.md) | 29 条陷阱，写代码前先过一遍 |
+| 导航 | [01-project-structure.md](01-project-structure.md) | 源码地图 |
+| 分层（3 天） | [02](02-primitives.md) → [03](03-datasources.md) → [04](04-plottables.md) → [05](05-rendering.md) → [06](06-interactivity.md) → [07](07-controls.md) | 自底向上：原子层 → 控件层 |
+| 全程 | [08-usage-caveats.md](08-usage-caveats.md) | 29 条陷阱，写代码前先过一遍 |

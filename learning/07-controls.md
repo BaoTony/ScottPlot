@@ -13,10 +13,10 @@
       Multiplot = new Multiplot(Plot)
       UserInputProcessor = new(this)
       Menu = new XxxPlotMenu(this)
-  → 事件转发: 平台原生事件 → UserInputProcessor.ProcessXXX() (→ 08-interactivity)
+  → 事件转发: 平台原生事件 → UserInputProcessor.ProcessXXX() (→ 06-interactivity)
   → 渲染触发: Invalidate() / OnPaintSurface() → Multiplot.Render(SKCanvas, rect)
                                                       ↓
-                                    RenderManager.Render() (→ 07-rendering)
+                                    RenderManager.Render() (→ 05-rendering)
 ```
 
 ---

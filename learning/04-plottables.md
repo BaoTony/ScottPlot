@@ -43,7 +43,7 @@ scatter.MarkerColor = Colors.Blue;  → MarkerStyle.Color = Blue
 
 每个 Plottable 遵循统一模板：`IPlottable` 核心契约 + 按需组合 IHas* Mixin 接口（IHasLine, IHasMarker, IHasFill 等），样式属性通过转发模式委托给对应的 Style 对象。
 
-核心方法：`IsVisible` · `Axes` · `GetAxisLimits()` · `Render()` · `LegendItems`。详见 [04-primitives](04-primitives.md)（接口定义）和 [07-rendering](07-rendering.md)（Render 调用流程）。
+核心方法：`IsVisible` · `Axes` · `GetAxisLimits()` · `Render()` · `LegendItems`。详见 [02-primitives](02-primitives.md)（接口定义）和 [05-rendering](05-rendering.md)（Render 调用流程）。
 
 ---
 
@@ -249,7 +249,7 @@ IHasInteractiveHandles → 交互句柄
 
 样式 Mixin 接口（IHasLine / IHasMarker / IHasFill / IHasLegendText / IHasArrow /
 IHasLabel / IHasOutline / IHasShadow / IHasBackground / IHasColorAxis）的完整属性
-清单与转发模式：见 [04-primitives §十](./04-primitives.md)。
+清单与转发模式：见 [02-primitives §十](./02-primitives.md)。
 
 ---
 

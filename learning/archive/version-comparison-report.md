@@ -3,7 +3,7 @@
 > 比对对象：`scottplot5-stats.py` / `scottplot5-api.py` 的统计输出
 > 真值源：① 编译后 `ScottPlot.dll`（net462）反射；② `git ls-files` 跟踪文件
 > ScottPlot 版本：**5.1.60**
-> 报告生成时间：2026-10-18
+> 报告生成时间：2026-08-18
 
 ---
 

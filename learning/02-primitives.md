@@ -8,7 +8,7 @@
 
 ```
 用户数据 (double[] xs, ys / Coordinates[])
-  → ScatterSourceDoubleArray / ScatterSourceCoordinatesArray (→ 05-datasources)
+  → ScatterSourceDoubleArray / ScatterSourceCoordinatesArray (→ 03-datasources)
   → Scatter.Render():
       Coordinates[] → Axes.GetPixel() → Pixel[]
       → MarkerStyle.Render() / LineStyle.Apply() → SKCanvas

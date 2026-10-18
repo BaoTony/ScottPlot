@@ -11,7 +11,7 @@
   → UserInputProcessor.ProcessXXX()     ← 封装为 IUserAction（平台无关）
   → 遍历 UserActionResponses[] 责任链    ← 第一个匹配者独占（IsPrimary）
   → 修改 Plot 状态（Axes.Pan / SetLimits）
-  → PlotControl.Refresh()               ← 触发 25 步渲染管道（07-rendering）
+  → PlotControl.Refresh()               ← 触发 25 步渲染管道（05-rendering）
 ```
 
 ## 一、交互系统架构

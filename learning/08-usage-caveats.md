@@ -1,6 +1,6 @@
 # ScottPlot 5 学习与使用注意事项
 
-> 基于源码逐条验证，所有主张均标注源码位置以证明非捏造。验证时间：2026-10-18。
+> 基于源码逐条验证，所有主张均标注源码位置以证明非捏造。验证时间：2026-08-18。
 
 ---
 
@@ -34,7 +34,7 @@ plot.Axes.SetLimitsX(0, 100);   // HasBeenSet = true → 后续 AutoScale 不再
 ### 3. `RenderOnce` vs `Render` 的区别
 
 ```csharp
-// 源码: RenderManager.cs:L109-L115
+// 源码: RenderManager.cs:L107-L115
 int maxRenderCount = 5;
 for (int i = 0; i < maxRenderCount; i++)
 {
@@ -295,7 +295,7 @@ Plot.PlotControl = this;   // Plot 知道自己的控件宿主
 ```
 
 - `Plot` 和 `IPlotControl` 之间存在循环引用
-- `Reset(newPlot)` 的实际顺序（[FormsPlotBase.cs](file:///d:/dev/store/ScottPlot/src/ScottPlot5/ScottPlot5%20Controls/ScottPlot.WinForms/FormsPlotBase.cs#L105-L114)）：先赋值 `Plot = newPlot` → `oldPlot?.Dispose()` → `newPlot.PlotControl = this` → `UserInputProcessor.Reset()` → `Multiplot.Reset(newPlot)`
+- `Reset(newPlot)` 的实际顺序（[FormsPlotBase.cs](file:///d:/dev/store/ScottPlot/src/ScottPlot5/ScottPlot5%20Controls/ScottPlot.WinForms/FormsPlotBase.cs#L103-L114)）：先赋值 `Plot = newPlot` → `oldPlot?.Dispose()` → `newPlot.PlotControl = this` → `UserInputProcessor.Reset()` → `Multiplot.Reset(newPlot)`
 - **Reset 不主动调用 Refresh()**，替换后需自行触发重绘
 
 ### 22. 所有平台控件最终汇合到同一个方法
