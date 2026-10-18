@@ -158,3 +158,13 @@ dotnet build "src/ScottPlot5/ScottPlot5/ScottPlot.csproj" --configuration Releas
 ### Q: `NETSDK1138: 目标框架不兼容`
 **原因**：WinForms/WPF 项目需要 Windows SDK，在 macOS/Linux 上无法编译这些 TFM。  
 **解决**：使用 `-f net10.0` 过滤（通用 TFM），或在 Windows 上编译。
+
+---
+
+## 六、相关文档
+
+| 文档 | 用途 |
+|------|------|
+| [project-structure.md](project-structure.md) | 项目源码目录导航 |
+| [getting-started.md](getting-started.md) | 新手入门，API 快速上手 |
+| [usage-caveats.md](usage-caveats.md) | 常见陷阱与注意事项 |

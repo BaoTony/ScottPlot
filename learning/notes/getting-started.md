@@ -458,5 +458,6 @@ canvas.DrawCircle(px.X, px.Y, 5, paint);
 | [ScottPlot Cookbook](https://scottplot.net/cookbook/5.0/) | 500+ 带截图的示例代码 |
 | [API 文档](https://scottplot.net/api/5.0/) | 完整 API 参考 |
 | [learning/ 学习笔记](../../learning/) | 项目架构深度剖析（本文档所在目录） |
+| [project-structure.md](project-structure.md) | 源码目录导航，快速定位代码位置 |
 | [GitHub 仓库](https://github.com/ScottPlot/ScottPlot) | 源码 + Issues + Discussion |
 | [RenderManager.cs](../../src/ScottPlot5/ScottPlot5/Rendering/RenderManager.cs) | 25 步渲染序列唯一真相源 |
